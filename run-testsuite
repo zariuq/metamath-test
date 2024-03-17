@@ -62,7 +62,7 @@ pass peano-fixed.mm
 pass ql.mm
 pass set.2010-08-29.mm
 pass set.mm
-fail set-dist.mm
+fail set-dist-bad1.mm
 
 # Wrap-up.
 
