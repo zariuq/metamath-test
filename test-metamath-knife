@@ -1,0 +1,3 @@
+#!/bin/sh
+
+~/.cargo/bin/metamath-knife --verify --split --jobs 4 --time "$1"

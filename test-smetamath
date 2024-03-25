@@ -1,3 +1,0 @@
-#!/bin/sh
-
-~/.cargo/bin/smetamath --verify --split --jobs 4 --timing "$1" 2>&1 | tee smm.log && [ `egrep -q ':Error:' < smm.log; echo $?` -eq 1 ]

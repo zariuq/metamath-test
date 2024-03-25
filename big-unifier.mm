@@ -309,12 +309,11 @@ $)
    wi wi wx wy wy wz wi wu wz wi wi wu wi wi wi wv wi wx wv wi wi ax-maj ax-mp
    $.
 
-$(
-
-This comment holds a simple typesetting definition file so that HTML
+$( The next comment holds a simple typesetting definition file so that HTML
 pages can be created with "show statement theorem1/html" in the
-metamath program.
+metamath program. $)
 
+$(
 $t
 htmldef "(" as " ( ";
 htmldef ")" as " ) ";
