@@ -12,7 +12,7 @@ $)
 
 
 $( This file is the introductory formal system example described
-   in Chapter 2 of the Meamath book. $)
+   in Chapter 2 of the Metamath book. $)
 
 $( Declare the constant symbols we will use $)
     $c 0 + = -> ( ) term wff |- $.

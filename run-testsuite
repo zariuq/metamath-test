@@ -65,6 +65,7 @@ pass set.mm
 fail set-dist-bad1.mm
 fail out-of-range-saved-step-bad1.mm
 fail demo0-illegal-label-bad1.mm
+fail demo0-dollar-in-math-symbol-bad1.mm
 
 # Wrap-up.
 
