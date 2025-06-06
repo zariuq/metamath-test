@@ -64,6 +64,7 @@ pass set.2010-08-29.mm
 pass set.mm
 fail set-dist-bad1.mm
 fail out-of-range-saved-step-bad1.mm
+fail demo0-illegal-label-bad1.mm
 
 # Wrap-up.
 
