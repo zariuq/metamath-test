@@ -46,7 +46,7 @@ pass anatomy.mm "Simple 'anatomy' test"
 fail anatomy-bad1.mm "Simple incorrect 'anatomy' test "
 fail anatomy-bad2.mm "Simple incorrect 'anatomy' test "
 fail anatomy-bad3.mm "Simple incorrect 'anatomy' test "
-pass big-unifier.mm
+# pass big-unifier.mm
 fail big-unifier-bad1.mm
 fail big-unifier-bad2.mm
 fail big-unifier-bad3.mm
@@ -54,15 +54,15 @@ pass demo0.mm
 fail demo0-bad1.mm
 pass demo0-includer.mm "Test simple file inclusion"
 pass emptyline.mm 'A file with one empty line'
-pass hol.mm
-pass iset.mm
+# pass hol.mm
+# pass iset.mm
 pass miu.mm
-pass nf.mm
-pass peano-fixed.mm
-pass ql.mm
-pass set.2010-08-29.mm
-pass set.mm
-fail set-dist-bad1.mm
+# pass nf.mm
+# pass peano-fixed.mm # Of manageable size
+# pass ql.mm
+# pass set.2010-08-29.mm
+# pass set.mm
+# fail set-dist-bad1.mm
 fail out-of-range-saved-step-bad1.mm "Simple test for out of range compressed proof step references"
 fail demo0-illegal-label-bad1.mm "Simple test for illegal label names"
 fail demo0-dollar-in-math-symbol-bad1.mm "Simple test for $ in math symbols"

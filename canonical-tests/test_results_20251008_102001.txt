@@ -1,0 +1,496 @@
+========================================================================
+COMPREHENSIVE METAMATH VERIFIER TEST
+========================================================================
+Date: St 8. října 2025, 10:20:01 CEST
+
+Core tests: 50
+Permissive tests: 3
+
+========================================================================
+TESTING CORE TESTS
+========================================================================
+
+Test: test01_non-printable_ascii_characters.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test02_missing_whitespace_between_tokens.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test03_nested_comment_delimiters.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test04_unbalanced_block_delimiters.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test05_dollar_sign_in_math_symbols.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test06_dangling_dollar_sign_at_eof.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test07_redeclaration_of_constant.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test08_variable_used_outside_scope.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test09_d_with_non-variables.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test10_duplicate_labels.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test11_label_conflicts_with_symbol.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test12_non-constant_typecode.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test13_f_with_undeclared_variable.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test14_variable_without_f_hypothesis.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test15_multiple_f_for_same_variable.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test16_conflicting_typecodes.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test17_include_scope_violation.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test18_missing_whitespace_after_comment.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test19_illegal_characters_in_compressed_proof.mm
+  metamath.exe:        FAIL
+  metamath-knife:      PASS
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test20_unknown_step_qmark_(should_accept_with_warning).mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            PASS
+  mm-lean4 --perm:     PASS
+  mmverify_pure:       PASS
+  mmverify_pure --perm:PASS
+  goverify:            FAIL
+
+Test: test21_self-referential_proof.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test22_typecode_mismatch_in_substitution.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test23_using_non-essential_hypotheses.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test24_undefined_label_in_proof.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test25_missing_space_before_comment.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test26_wrong_conclusion_in_proof.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test27_disjoint_variable_constraint_violation.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test28_self_include.mm
+  metamath.exe:        FAIL
+  metamath-knife:      PASS
+  mm-lean4:            PASS
+  mm-lean4 --perm:     PASS
+  mmverify_pure:       PASS
+  mmverify_pure --perm:PASS
+  goverify:            FAIL
+
+Test: test29_compressed_proof_header_mismatch.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test30_qmark_in_compressed_proof.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            PASS
+  mm-lean4 --perm:     PASS
+  mmverify_pure:       PASS
+  mmverify_pure --perm:PASS
+  goverify:            FAIL
+
+Test: test31_missing_whitespace_after_comment.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test32_forward_reference_in_proof.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test33_compressed_proof_stack_underflow.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test34_label_token_in_math_context.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test35_f_not_active_after_block_close.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test36_whitespace_in_compressed_proof.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test37_rpn_interleaving_mandatory_hyps.mm
+  metamath.exe:        FAIL
+  metamath-knife:      PASS
+  mm-lean4:            PASS
+  mm-lean4 --perm:     PASS
+  mmverify_pure:       PASS
+  mmverify_pure --perm:PASS
+  goverify:            PASS
+
+Test: test38_whitespace_in_valid_compressed.mm
+  metamath.exe:        FAIL
+  metamath-knife:      PASS
+  mm-lean4:            PASS
+  mm-lean4 --perm:     PASS
+  mmverify_pure:       PASS
+  mmverify_pure --perm:PASS
+  goverify:            PASS
+
+Test: test39_include_basic_outer.mm
+  metamath.exe:        FAIL
+  metamath-knife:      PASS
+  mm-lean4:            PASS
+  mm-lean4 --perm:     PASS
+  mmverify_pure:       PASS
+  mmverify_pure --perm:PASS
+  goverify:            PASS
+
+Test: test40_include_scope_correct_outer.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            PASS
+  mm-lean4 --perm:     PASS
+  mmverify_pure:       PASS
+  mmverify_pure --perm:PASS
+  goverify:            PASS
+
+Test: test41_include_multiple_a.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test41_include_multiple_b.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test41_include_multiple_main.mm
+  metamath.exe:        FAIL
+  metamath-knife:      PASS
+  mm-lean4:            PASS
+  mm-lean4 --perm:     PASS
+  mmverify_pure:       PASS
+  mmverify_pure --perm:PASS
+  goverify:            PASS
+
+Test: test42_include_duplicate_main.mm
+  metamath.exe:        FAIL
+  metamath-knife:      PASS
+  mm-lean4:            PASS
+  mm-lean4 --perm:     PASS
+  mmverify_pure:       PASS
+  mmverify_pure --perm:PASS
+  goverify:            FAIL
+
+Test: test43_include_canonical_main.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            PASS
+  mm-lean4 --perm:     PASS
+  mmverify_pure:       PASS
+  mmverify_pure --perm:PASS
+  goverify:            FAIL
+
+Test: test44_include_cycle_a.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test44_include_cycle_b.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test44_include_cycle_main.mm
+  metamath.exe:        FAIL
+  metamath-knife:      PASS
+  mm-lean4:            PASS
+  mm-lean4 --perm:     PASS
+  mmverify_pure:       PASS
+  mmverify_pure --perm:PASS
+  goverify:            FAIL
+
+Test: test45_variable_redeclaration.mm
+  metamath.exe:        FAIL
+  metamath-knife:      PASS
+  mm-lean4:            PASS
+  mm-lean4 --perm:     PASS
+  mmverify_pure:       PASS
+  mmverify_pure --perm:PASS
+  goverify:            PASS
+
+Test: test48_variable_conflict_main.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+========================================================================
+TESTING PERMISSIVE TESTS
+========================================================================
+
+Test: test46_duplicate_include_main.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            FAIL
+  mm-lean4 --perm:     FAIL
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            PASS
+
+Test: test49_token_splice_axiom_main.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            PASS
+  mm-lean4 --perm:     PASS
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+Test: test50_token_splice_proof_main.mm
+  metamath.exe:        FAIL
+  metamath-knife:      FAIL
+  mm-lean4:            PASS
+  mm-lean4 --perm:     PASS
+  mmverify_pure:       FAIL
+  mmverify_pure --perm:FAIL
+  goverify:            FAIL
+
+========================================================================
+TEST COMPLETE - Results saved to test_results_20251008_102001.txt
+========================================================================

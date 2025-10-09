@@ -1,0 +1,40 @@
+========================================================================
+COMPREHENSIVE METAMATH VERIFIER TEST - ALL VERIFIERS, ALL TESTS
+========================================================================
+Date: St 8. října 2025, 10:08:34 CEST
+Location: /home/zar/claude/hyperon/metamath/metamath-test/canonical-tests
+
+CORE Tests: 50
+PERMISSIVE Tests: 3
+TOTAL Tests: 53
+
+Testing verifiers on ALL tests...
+
+Testing test01_non-printable_ascii_characters.mm... done
+Testing test02_missing_whitespace_between_tokens.mm... done
+Testing test03_nested_comment_delimiters.mm... done
+Testing test04_unbalanced_block_delimiters.mm... done
+Testing test05_dollar_sign_in_math_symbols.mm... done
+Testing test06_dangling_dollar_sign_at_eof.mm... done
+Testing test07_redeclaration_of_constant.mm... done
+Testing test08_variable_used_outside_scope.mm... done
+Testing test09_d_with_non-variables.mm... done
+Testing test10_duplicate_labels.mm... done
+Testing test11_label_conflicts_with_symbol.mm... done
+Testing test12_non-constant_typecode.mm... done
+Testing test13_f_with_undeclared_variable.mm... done
+Testing test14_variable_without_f_hypothesis.mm... done
+Testing test15_multiple_f_for_same_variable.mm... done
+Testing test16_conflicting_typecodes.mm... done
+Testing test17_include_scope_violation.mm... done
+Testing test18_missing_whitespace_after_comment.mm... done
+Testing test19_illegal_characters_in_compressed_proof.mm... done
+Testing test20_unknown_step_qmark_(should_accept_with_warning).mm... done
+Testing test21_self-referential_proof.mm... done
+Testing test22_typecode_mismatch_in_substitution.mm... done
+Testing test23_using_non-essential_hypotheses.mm... done
+Testing test24_undefined_label_in_proof.mm... done
+Testing test25_missing_space_before_comment.mm... done
+Testing test26_wrong_conclusion_in_proof.mm... done
+Testing test27_disjoint_variable_constraint_violation.mm... done
+Testing test28_self_include.mm... 
