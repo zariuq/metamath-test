@@ -1,0 +1,134 @@
+# Metamath Test Suite - Authoritative Reference
+# Based on SPEC_SECTION_4.txt analysis
+# 
+# Format: VERDICT path/test.mm # Spec reason
+# Line numbers refer to SPEC_SECTION_4.txt
+
+# ============================================================================
+# CORE TESTS (25)
+# ============================================================================
+
+REJECT core/anatomy-bad1.mm          # 4.2.1: proof verification failure
+REJECT core/anatomy-bad2.mm          # 4.2.1: proof verification failure
+REJECT core/anatomy-bad3.mm          # 4.2.1: proof verification failure
+ACCEPT core/anatomy.mm               # Valid database per spec
+REJECT core/big-unifier-bad1.mm      # 4.2.1: unification/substitution failure
+REJECT core/big-unifier-bad2.mm      # 4.2.1: unification/substitution failure
+REJECT core/big-unifier-bad3.mm      # 4.2.1: unification/substitution failure
+ACCEPT core/big-unifier.mm           # Valid database per spec
+REJECT core/demo0-bad1.mm            # 4.2.1: proof verification failure
+REJECT core/demo0-dollar-in-math-symbol-bad1.mm  # L339-342: math symbols must not contain $
+REJECT core/demo0-illegal-label-bad1.mm          # L167-169: labels must be alphanumeric+hyphen+underscore+period
+ACCEPT core/demo0-includee.mm        # Valid database per spec
+ACCEPT core/demo0-includer.mm        # Valid database per spec
+ACCEPT core/demo0.mm                 # Valid database per spec
+ACCEPT core/emptyline.mm             # L77-79: whitespace (including newlines) is valid separator
+ACCEPT core/hol.mm                   # Valid database per spec
+ACCEPT core/iset.mm                  # Valid database per spec
+ACCEPT core/miu.mm                   # Valid database per spec
+ACCEPT core/nf.mm                    # Valid database per spec
+REJECT core/out-of-range-saved-step-bad1.mm  # 4.4: compressed proof Z reference out of range
+ACCEPT core/peano-fixed.mm           # Valid database per spec
+ACCEPT core/ql.mm                    # Valid database per spec
+ACCEPT core/set.2010-08-29.mm        # Valid database per spec
+REJECT core/set-dist-bad1.mm         # 4.2.7: $d violation in proof
+ACCEPT core/set.mm                   # Valid database per spec
+
+# ============================================================================
+# UNIT TESTS (57)
+# ============================================================================
+
+REJECT unit/test01_non-printable_ascii_characters.mm    # L73-79: only printable ASCII + whitespace allowed
+REJECT unit/test02_missing_whitespace_between_tokens.mm # L81-83: tokens must be separated by whitespace
+REJECT unit/test03_nested_comment_delimiters.mm         # L89-91: $( may not appear inside comments
+REJECT unit/test04_unbalanced_block_delimiters.mm       # L153-155: ${ must match $}
+REJECT unit/test05_dollar_sign_in_math_symbols.mm       # L339-342: math symbols must not contain $
+REJECT unit/test06_dangling_dollar_sign_at_eof.mm       # L81-83: $ must be followed by valid keyword char
+REJECT unit/test07_redeclaration_of_constant.mm         # L161-163: constant may not be redeclared
+REJECT unit/test08_variable_used_outside_scope.mm       # L174-178: variable must have active $f
+REJECT unit/test09_d_with_non-variables.mm              # L547-549: $d must contain only variables
+REJECT unit/test10_duplicate_labels.mm                  # L179-180: label tokens must be unique
+REJECT unit/test11_label_conflicts_with_symbol.mm       # L179-180: no label may match any math symbol
+REJECT unit/test12_non-constant_typecode.mm             # L286-292: first symbol in $f must be constant (typecode)
+REJECT unit/test13_f_with_undeclared_variable.mm        # L174-178: $f variable must be declared
+REJECT unit/test14_variable_without_f_hypothesis.mm     # L177-178: each variable in $e/$a/$p must have active $f
+REJECT unit/test15_multiple_f_for_same_variable.mm      # L176-177,891: no two active $f may have same variable
+REJECT unit/test16_conflicting_typecodes.mm             # L176-177,891: no two active $f may have same variable
+REJECT unit/test17_include_scope_violation.mm           # 4.2.8: $[ $] scope rules
+REJECT unit/test18_missing_whitespace_after_comment.mm  # L81-83: whitespace required between tokens
+REJECT unit/test19_illegal_characters_in_compressed_proof.mm  # AppB: compressed proof uses only A-Z and ?
+ACCEPT unit/test20_unknown_step_qmark_(should_accept_with_warning).mm  # L221-223: ? allowed, verifier may warn
+REJECT unit/test21_self-referential_proof.mm            # L213-218: proof may not reference itself
+REJECT unit/test22_typecode_mismatch_in_substitution.mm # L208-212: substitution must match typecode
+REJECT unit/test23_using_non-essential_hypotheses.mm    # 4.2.5: only active hypotheses may be used
+REJECT unit/test24_undefined_label_in_proof.mm          # L213-218: proof labels must be defined
+REJECT unit/test25_missing_space_before_comment.mm      # L81-83: $( must be whitespace-separated
+REJECT unit/test26_wrong_conclusion_in_proof.mm         # L218-220: final stack must match $p statement
+REJECT unit/test27_disjoint_variable_constraint_violation.mm  # 4.2.7: $d constraints must be satisfied
+REJECT unit/test28_self_include.mm                      # 4.2.8: file may not include itself
+REJECT unit/test29_compressed_proof_header_mismatch.mm  # AppB: compressed proof header must match mandatory hyps
+ACCEPT unit/test30_qmark_in_compressed_proof.mm         # L1894-1895: ? allowed in compressed proofs
+REJECT unit/test31_missing_whitespace_after_comment.mm  # L81-83: $) must be whitespace-separated
+REJECT unit/test32_forward_reference_in_proof.mm        # L213-218: proof labels must be previously defined
+REJECT unit/test33_compressed_proof_stack_underflow.mm  # L218-220: stack must not underflow
+REJECT unit/test34_label_token_in_math_context.mm       # L179-180,339: labels and math symbols are disjoint
+REJECT unit/test35_f_not_active_after_block_close.mm    # L174-175: $f active only until block end
+REJECT unit/test36_whitespace_in_compressed_proof.mm    # AppB: no whitespace inside compressed proof string
+ACCEPT unit/test37_rpn_interleaving_mandatory_hyps.mm   # Valid per RPN proof semantics
+ACCEPT unit/test38_whitespace_in_valid_compressed.mm    # AppB: whitespace allowed in header, not proof string
+REJECT unit/test39_include_basic_outer.mm               # 4.2.8: include file not found or invalid
+REJECT unit/test40_include_scope_correct_outer.mm       # 4.2.8: include scope violation
+REJECT unit/test41_include_multiple_main.mm             # 4.2.8: include processing error
+REJECT unit/test42_include_duplicate_main.mm            # 4.2.8: duplicate include
+REJECT unit/test44_include_cycle_main.mm                # 4.2.8: circular include detected
+ACCEPT unit/test45_variable_redeclaration.mm            # L161-163: variables MAY be redeclared in new scope
+REJECT unit/test46_duplicate_include_main.mm            # 4.2.8: duplicate include processing
+REJECT unit/test47_constant_inner_scope_main.mm         # L161-163: $c only allowed at outermost scope
+REJECT unit/test48_variable_conflict_main.mm            # L161-163: variable conflicts with constant
+REJECT unit/test49_token_splice_axiom.mm                # L81-83: token boundaries must be preserved
+REJECT unit/test50_token_splice_proof.mm                # L81-83: token boundaries must be preserved
+REJECT unit/test52_include_inside_e.mm                  # 4.2.8: $[ not allowed inside $e
+REJECT unit/test53_include_inside_d.mm                  # 4.2.8: $[ not allowed inside $d
+ACCEPT unit/test54_whitespace_variety.mm                # L77-79: various whitespace chars valid
+REJECT unit/test55_compressed_z_oob.mm                  # AppB: Z reference out of bounds
+REJECT unit/test56_duplicate_d_normalization.mm         # L553-558: duplicate $d is error (not just normalized)
+ACCEPT unit/test57_case_sensitivity_labels.mm           # L167-169: labels are case-sensitive
+ACCEPT unit/test58_case_sensitivity_symbols.mm          # L339-342: math symbols are case-sensitive
+ACCEPT unit/test_complex_ehyp_syl2anc.mm                # Valid proof per spec
+
+# ============================================================================
+# MMVERIFY TESTS (32)
+# ============================================================================
+
+ACCEPT mmverify/demo0.mm                    # Valid database per spec
+REJECT mmverify/disjoint2_almostgood.mm     # 4.2.7: $d violation
+REJECT mmverify/disjoint2.mm                # 4.2.7: $d violation
+REJECT mmverify/disjoint2_semigood.mm       # 4.2.7: $d violation
+REJECT mmverify/disjoint2_stillbad.mm       # 4.2.7: $d violation
+REJECT mmverify/disjoint2_verybad.mm        # 4.2.7: $d violation
+REJECT mmverify/dv_tests_explicit.mm        # 4.2.7: $d violation
+REJECT mmverify/dv_tests.mm                 # 4.2.7: $d violation
+REJECT mmverify/dv_tests_scoped.mm          # 4.2.7: $d violation
+REJECT mmverify/dv_tests_simple.mm          # 4.2.7: $d violation
+REJECT mmverify/regression_dvs.mm           # 4.2.7: $d violation
+ACCEPT mmverify/stillgood.mm                # Valid database per spec
+ACCEPT mmverify/test_complex_ehyp_syl2anc.mm  # Valid proof per spec
+REJECT mmverify/test_dv_01.mm               # 4.2.7: $d violation - vars substituted must be disjoint
+ACCEPT mmverify/test_dv_02.mm               # Valid - no $d required (no overlap)
+REJECT mmverify/test_dv_03.mm               # 4.2.7: $d violation
+ACCEPT mmverify/test_dv_04.mm               # Valid - $d satisfied
+REJECT mmverify/test_dv_05.mm               # 4.2.7: $d violation
+ACCEPT mmverify/test_dv_06.mm               # Valid - $d satisfied
+REJECT mmverify/test_dv_07.mm               # 4.2.7: $d violation
+ACCEPT mmverify/test_dv_08.mm               # Valid - $d satisfied
+REJECT mmverify/test_dv_09.mm               # 4.2.7: $d violation
+ACCEPT mmverify/test_dv_10_multivar.mm      # Valid - multi-var $d satisfied
+REJECT mmverify/test_dv_duplicates.mm       # 4.2.7 or L553-558: duplicate $d handling
+ACCEPT mmverify/test_dv_multivar.mm         # Valid - multi-var $d satisfied
+ACCEPT mmverify/test_dv_scope.mm            # Valid - $d scoping correct
+REJECT mmverify/test_ehyp_mismatch.mm       # 4.2.5: $e hypothesis count mismatch
+ACCEPT mmverify/test_nested_scope_exact.mm  # Valid - nested scopes handled correctly
+ACCEPT mmverify/test_nested_scope.mm        # Valid - nested scopes handled correctly
+ACCEPT mmverify/test_nested_scope_proof.mm  # Valid - nested scope proof correct
+REJECT mmverify/test_type_mismatch.mm       # L208-212: typecode mismatch in substitution
+REJECT mmverify/verybad.mm                  # 4.2.7: $d violation in proof
