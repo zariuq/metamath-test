@@ -57,7 +57,7 @@
 | 17 | Include scope violation | §4.2.8 | CORE | REJECT |
 | 28 | Self-include | §4.1.2 | CORE | ACCEPT (ignored) |
 | 39 | Basic include | §4.1.2 | CORE | ACCEPT |
-| 40 | Scoped include (outermost) | §4.1.2 | CORE | ACCEPT |
+| 40 | Include inside ${ ... $} | §4.1.2 | CORE | REJECT |
 | 41 | Multiple includes | §4.1.2 | CORE | ACCEPT |
 | 42 | Duplicate include | §4.1.2 | CORE | ACCEPT (2nd ignored) |
 | 43 | Path canonicalization | §4.1.2 | CORE | ACCEPT |
@@ -69,7 +69,7 @@
 
 | Test | Description | Spec | Category | Expected |
 |------|-------------|------|----------|----------|
-| 46 | Include in different ${ } blocks | §4.4.4 (interpretation) | **POLICY** | ACCEPT (permissive) |
+| 46 | Include in inner blocks | §4.1.2 | CORE | REJECT |
 | 49 | Token splice in axiom | §4.4.4 (interpretation) | **POLICY** | ACCEPT? (optional) |
 | 50 | Token splice in proof | §4.4.4 (interpretation) | **POLICY** | ACCEPT? (optional) |
 
@@ -125,23 +125,14 @@
 
 ## Interpretation Notes
 
-### Test 46: Include in Inner Blocks
+### Include Statements (tests 28, 39–44, 46)
 
-**Spec §4.1.2:** "only allowed in the outermost scope (i.e., not between ${ and $})"
+- **Outermost only.** Spec §4.1.2 processes `$[ ... $]` before parsing; an include inside an open `${ ... $}` violates the spec. Both `test40` and `test46` therefore expect **REJECT** in strict mode. Some legacy verifiers accept these patterns; that is treated as non-compliant behaviour.
+- **Self-include.** `test28` remains **ACCEPT**—the second inclusion is ignored because the file is already on the include stack, matching the spec’s “simply be ignored” wording.
 
-**Interpretation:**
-- **Strict (metamath-knife):** REJECT - binding spec prohibits
-- **Permissive (goverify, mm-lean4):** ACCEPT - treated as extension
+### Optional Extensions (tests 49–50)
 
-**Resolution:** Mark as **POLICY** test, requires `--permissive` flag
-
-### Tests 49-50: Token Splice
-
-**Spec §4.1.2:** "must not be inside a statement"
-
-**Interpretation:**
-- May be too strict for practical use
-- Mark as **POLICY** - optional advanced feature
+Token splicing inside statements is outside the core spec. We keep these as optional **POLICY** tests for experiments; strict runs may skip them.
 
 ---
 
@@ -150,10 +141,10 @@
 ### All CORE tests (binding spec)
 ```bash
 ./run_tests.sh --strict
-# Expected: 47 CORE tests pass
+# Expected: 48 CORE tests pass
 ```
 
-### With POLICY tests (permissive mode)
+### Add optional POLICY tests
 ```bash
 ./run_tests.sh --permissive
 # Expected: All 50 tests pass

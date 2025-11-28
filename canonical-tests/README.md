@@ -1,154 +1,119 @@
 # Metamath Canonical Test Suite
 
-**Version:** 3.0 (Strict Mode Only)
-**Date:** 2025-10-08
-**Core Tests:** 49
-**Optional Tests:** 1
-**Spec Authority:** Metamath Book + Appendix E (normative grammar)
+A comprehensive test suite for Metamath verifier implementations.
 
----
+**Total Tests:** 92 (56 unit + 31 small canonical + 3 large canonical + 2 optional categories)
+
+## Organization
+
+```
+canonical-tests/
+├── unit-tests/              # Custom spec tests (56 tests)
+│   └── test*.mm            # 20 positive, 38 negative
+├── canonical/              # Canonical tests from metamath community
+│   ├── small/              # Small tests (31 tests)
+│   │   └── *.mm           # 17 positive, 14 negative
+│   └── large/              # Large databases (3 symlinks)
+│       ├── set.mm         # 796k lines (positive)
+│       ├── miu.mm         # 144 lines (positive)
+│       └── demo0-full.mm  # 1323 lines (positive)
+├── drivers/                
+│   └── test_runner.py     # Multi-verifier test runner
+└── [documentation]
+```
 
 ## Quick Start
 
+### Test Single File
 ```bash
-# Run all core tests
-./run_strict_tests.sh
+# With metamath-knife (recommended)
+cd canonical/small
+metamath-knife --verify anatomy.mm
 
-# Score results
-python3 score_strict_results.py test_results_strict_YYYYMMDD_HHMMSS.txt
+# With mmexe.sh
+cd ~/claude/hyperon/metamath/metamath-test
+./mmexe.sh canonical-tests/canonical/small/anatomy.mm
+
+# With test runner
+cd canonical-tests
+python3 drivers/test_runner.py --verifier mmverify \
+    --test-file canonical/small/anatomy.mm
 ```
 
-## Test Suite Structure
+### Test Directory
+```bash
+cd canonical-tests
+python3 drivers/test_runner.py --verifier mmverify \
+    --test-dir canonical/small/ --verbose
+```
 
-### Core Tests (49 tests)
-Located in main directory: `test01-42.mm`, `test44-50.mm`
+## Test Statistics
 
-**All core tests have definitive expected outcomes per Metamath Book + Appendix E.**
+| Category | Tests | Positive | Negative | Source |
+|----------|-------|----------|----------|--------|
+| Unit tests | 56 | 20 | 38 | Custom (spec compliance) |
+| Canonical small | 31 | 17 | 14 | ~/claude/hyperon/metamath/tests/ |
+| Canonical large | 3 | 3 | 0 | Production databases |
+| **TOTAL** | **90** | **40** | **52** | |
 
-- **Positive tests (11)**: Valid constructs that must PASS
-- **Negative tests (38)**: Spec violations that must REJECT
+## Documentation
 
-### Optional Tests (1 test)
-Located in `optional_tests/` directory
+- **CANONICAL_TESTS_COMPLETE.md** - Complete canonical test documentation
+  - All 31 small tests classified with metamath-knife + mmexe.sh
+  - Positive/negative determination
+  - Expected errors for negative tests
+  
+- **TEST_INVENTORY.md** - Complete test inventory (all 92 tests)
 
-- **test43**: Path canonicalization - **both PASS and REJECT are spec-compliant**
+- **TEST_CATALOGUE.md** - Unit test details
 
-### Helper Files
-Located in `helpers/` directory (not run standalone)
+- **README.md** - This file (quick start)
 
-- Include fragments, inner files, shared files for multi-file tests
+- **REORGANIZATION_SUMMARY.md** - How tests were reorganized
 
----
+## Available Verifiers
 
-## Core Spec Requirements
+List verifiers:
+```bash
+python3 drivers/test_runner.py --list-verifiers
+```
 
-### Include Semantics (§4.1.2)
+Supported:
+- `metamath` - metamath.exe (reference C)
+- `mmverify_canonical` - mmverify_canonical.py (reference Python)
+- `mmverify` - mmverify.py (fixed mmverify_pure.py)
+- `mmverify_original` - Original mmverify.py
 
-✅ **Outermost level only** - includes processed before parsing, not inside blocks
-✅ **Not inside statements** - no token splicing mid-axiom or mid-proof
-✅ **Self-include ignored** - including same file is no-op
-✅ **Duplicates ignored** - second reference to same file ignored
-✅ **Cycle detection** - include stack prevents infinite loops
-⚠️ **Path deduplication** - string-based is sufficient (canonicalization is optional)
+## Quick Examples
 
-### Scoping Rules (§4.2.8)
+```bash
+cd ~/claude/hyperon/metamath/metamath-test/canonical-tests
 
-✅ **Constants outermost** - all `$c` must be at outermost block
-✅ **Variables scoped** - active in current and nested blocks only
-✅ **No redeclaration** - while variable is active
-✅ **Redeclaration allowed** - after variable becomes inactive
+# Test positive case
+python3 drivers/test_runner.py --verifier mmverify \
+    --test-file canonical/small/anatomy.mm
+# Expected: ✓ PASS
 
----
+# Test negative case  
+python3 drivers/test_runner.py --verifier mmverify \
+    --test-file canonical/small/disjoint1.mm
+# Expected: ✗ FAIL (correctly rejects invalid test)
 
-## Test Classification
+# Test large database
+python3 drivers/test_runner.py --verifier mmverify \
+    --test-file canonical/large/miu.mm
+# Expected: ✓ PASS
+```
 
-### Must PASS (11 tests)
+## Classification
 
-Valid constructs per spec:
+Tests classified using both reference implementations:
+- **metamath-knife** (Rust, most reliable)
+- **mmexe.sh** (C reference, metamath.exe)
 
-- test20: Unknown step ? (warning OK)
-- test28: Self-include (spec says ignore)
-- test30: ? in compressed proof
-- test37: RPN interleaving mandatory hyps
-- test38: Whitespace in valid compressed
-- test39: Basic include (outermost)
-- test41: Multiple includes (outermost)
-- test42: Duplicate include (second ignored)
-- test44: Include cycle detection
-- test45: Variable redeclaration across scopes
-
-### Must REJECT (38 tests)
-
-**Syntax Errors (18):** 01-19 (except 20), 25, 31
-**Semantic Errors (11):** 21-24, 26-27, 29, 32-36
-**Include Violations (9):** 17, 40, 46-50
-
----
-
-## Key Clarifications
-
-### Inner-Block Includes (Tests 40, 46)
-❌ **OUT OF SPEC** - Must REJECT
-
-Spec §4.1.2: includes processed "at the outermost level" before parsing. Inner-block includes violate this. metamath.exe accepts test40 as a quirk, but this is not spec-compliant.
-
-### Token Splice (Tests 49, 50)
-❌ **OUT OF SPEC** - Must REJECT
-
-Spec §4.1.2: includes processed before parsing, not spliced mid-statement. Attempting to splice `$[ $]` inside `$a` or `$p` statements is invalid.
-
-### Path Canonicalization (Test 43)
-✅ **BOTH VALID** - Optional
-
-Spec §4.1.2: "may assume that file names with different strings refer to different files"
-
-- **String-based dedup** (no canonicalization): spec-compliant → REJECT (duplicate labels)
-- **Path canonicalization**: policy/extension → PASS (second include ignored)
-
-Both behaviors are correct! Test 43 is in `optional_tests/` for this reason.
+Agreement: 100% (all tests agree)
 
 ---
 
-## Verifier Compliance
-
-| Verifier | Core Compliance | Status |
-|----------|----------------|--------|
-| **mm-lean4** | 100% (49/49) | ✅ Fully compliant |
-| **mmverify_pure** | 100% (49/49) | ✅ Fully compliant |
-| **metamath.exe** | ~91% | ⚠️ Some deviations |
-| **metamath-knife** | ~89% | ⚠️ Some deviations |
-| **goverify** | ~44% | ❌ Major issues |
-
-See `VERIFIER_COMPLIANCE.md` for detailed analysis.
-
----
-
-## Files
-
-- `run_strict_tests.sh` - Test runner (all 49 core tests)
-- `score_strict_results.py` - Scoring script with expected outcomes
-- `VERIFIER_COMPLIANCE.md` - Detailed compliance analysis
-- `README.md` - This file
-- `test01-50.mm` - Individual test files (except test43)
-- `helpers/` - Helper files for multi-file tests
-- `optional_tests/` - Optional tests (test43)
-
----
-
-## History
-
-- **2025-10-08 v3.0**: Cleanup for strict-spec only
-  - Retired permissive mode
-  - Clarified test43 as optional (both behaviors valid per spec)
-  - Confirmed tests 40, 46, 49, 50 as negative (out of spec)
-  - Final count: **49 core tests, 1 optional test**
-
-- **2025-10-07 v2.0**: Refactored for CORE vs POLICY distinction
-
----
-
-## References
-
-- [Metamath Book](http://us.metamath.org/downloads/metamath.pdf) - Primary specification
-- [Appendix E](http://us.metamath.org/downloads/appendix-e.txt) - EBNF grammar (normative)
-- [mm-lean4 verification](../../mm-lean4/) - Formally verified implementation
+**Last Updated:** 2025-10-28
+**Canonical tests verified:** 34 (31 small + 3 large)

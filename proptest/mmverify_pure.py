@@ -99,7 +99,10 @@ class Toks:
         """
         self.files_buf = [file]
         self.tokbuf: list[str] = []
-        self.imported_files = set({pathlib.Path(file.name).resolve()})
+        root_path = pathlib.Path(file.name).resolve()
+        self.imported_files = {root_path}
+        self.dir_stack: list[pathlib.Path] = [root_path.parent]
+        self.statement_depth = 0
 
     def read(self) -> StringOption:
         """Read the next token in the token buffer, or if it is empty, split
@@ -116,6 +119,7 @@ class Toks:
                 self.tokbuf.reverse()
             else:  # no line: end of current file
                 self.files_buf.pop().close()
+                self.dir_stack.pop()
                 if not self.files_buf:
                     return None  # End of database
         tok = self.tokbuf.pop()
@@ -138,8 +142,16 @@ class Toks:
                 raise MMError(
                     ("Inclusion statement for file {} not " +
                      "closed with a '$]'.").format(filename))
-            file = pathlib.Path(filename).resolve()
-            if file not in self.imported_files:
+            include_path = pathlib.Path(filename)
+            if not include_path.is_absolute():
+                include_path = (self.dir_stack[-1] / include_path).resolve()
+            else:
+                include_path = include_path.resolve()
+            if self.statement_depth > 0:
+                raise MMError(
+                    "Include statements ($[ ... $]) are only allowed at the "
+                    "outermost level (spec Section 4.1.2)")
+            if include_path not in self.imported_files:
                 # wrap the rest of the line after the inclusion command in a
                 # file object
                 self.files_buf.append(
@@ -148,8 +160,16 @@ class Toks:
                             reversed(
                                 self.tokbuf))))
                 self.tokbuf = []
-                self.files_buf.append(open(file, mode='r', encoding='ascii'))
-                self.imported_files.add(file)
+                self.dir_stack.append(self.dir_stack[-1])
+                try:
+                    opened = open(include_path, mode='r', encoding='ascii')
+                except FileNotFoundError as exc:
+                    raise MMError(
+                        f"Included file '{filename}' not found relative to "
+                        f"{self.dir_stack[-1]}") from exc
+                self.files_buf.append(opened)
+                self.dir_stack.append(include_path.parent)
+                self.imported_files.add(include_path)
                 vprint(5, 'Importing file:', filename)
             tok = self.read()
         vprint(80, "Token once included files expanded:", tok)
@@ -313,9 +333,12 @@ class MM:
         self.begin_label = begin_label
         self.stop_label = stop_label
         self.verify_proofs = not self.begin_label
+        self.block_depth = 0
 
     def add_c(self, tok: Const) -> None:
         """Add a constant to the database."""
+        if self.block_depth > 1:
+            raise MMError('$c must be in outermost block (spec Section 4.2.8)')
         if '$' in tok:
             raise MMError("Character '$' not allowed in math symbol: {}".format(tok))
         if tok in self.constants:
@@ -368,32 +391,40 @@ class MM:
         (typically "$=" or "$.").
         """
         stmt = []
-        tok = toks.readc()
-        while tok and tok != end_token:
-            is_active_var = self.fs.lookup_v(tok)
-            if stmttype == '$d':
-                # $d must contain variables only (no constants) - Spec §4.1.5
-                if not is_active_var:
-                    raise MMError(
-                        "Token {} in $d is not a declared variable".format(tok))
-            elif stmttype in {'$e', '$a', '$p'} and not (
-                    tok in self.constants or is_active_var):
-                raise MMError(
-                    "Token {} is not an active symbol".format(tok))
-            if stmttype in {
-                '$e',
-                '$a',
-                    '$p'} and is_active_var and not self.fs.lookup_f(tok):
-                raise MMError(("Variable {} in {}-statement is not typed " +
-                               "by an active $f-statement).").format(tok, stmttype))
-            stmt.append(tok)
+        toks.statement_depth += 1
+        try:
             tok = toks.readc()
-        if not tok:
-            raise MMError(
-                "Unclosed {}-statement at end of file.".format(stmttype))
-        assert tok == end_token
-        vprint(20, 'Statement:', stmt)
-        return stmt
+            while tok and tok != end_token:
+                if tok == '$[':
+                    raise MMError(
+                        "Include statements ($[ ... $]) cannot appear inside "
+                        f"{stmttype}-statements (spec Section 4.1.2)")
+                is_active_var = self.fs.lookup_v(tok)
+                if stmttype == '$d':
+                    # $d must contain variables only (no constants) - Spec §4.1.5
+                    if not is_active_var:
+                        raise MMError(
+                            "Token {} in $d is not a declared variable".format(tok))
+                elif stmttype in {'$e', '$a', '$p'} and not (
+                        tok in self.constants or is_active_var):
+                    raise MMError(
+                        "Token {} is not an active symbol".format(tok))
+                if stmttype in {
+                    '$e',
+                    '$a',
+                        '$p'} and is_active_var and not self.fs.lookup_f(tok):
+                    raise MMError(("Variable {} in {}-statement is not typed " +
+                                   "by an active $f-statement).").format(tok, stmttype))
+                stmt.append(tok)
+                tok = toks.readc()
+            if not tok:
+                raise MMError(
+                    "Unclosed {}-statement at end of file.".format(stmttype))
+            assert tok == end_token
+            vprint(20, 'Statement:', stmt)
+            return stmt
+        finally:
+            toks.statement_depth -= 1
 
     def read_non_p_stmt(self, stmttype: Stmttype, toks: Toks) -> Stmt:
         """Read tokens from the input (assumed to be at the beginning of a
@@ -415,78 +446,82 @@ class MM:
         """Read the given token list to update the database and verify its
         proofs.
         """
+        self.block_depth += 1
         self.fs.push()
-        label = None
-        tok = toks.readc()
-        while tok and tok != '$}':
-            if tok == '$c':
-                for tok in self.read_non_p_stmt(tok, toks):
-                    self.add_c(tok)
-            elif tok == '$v':
-                for tok in self.read_non_p_stmt(tok, toks):
-                    self.add_v(tok)
-            elif tok == '$f':
-                stmt = self.read_non_p_stmt(tok, toks)
-                if not label:
-                    raise MMError(
-                        '$f must have label (statement: {})'.format(stmt))
-                if len(stmt) != 2:
-                    raise MMError(
-                        '$f must have length two but is {}'.format(stmt))
-                self.add_f(stmt[0], stmt[1], label)
-                self.labels[label] = ('$f', [stmt[0], stmt[1]])
-                label = None
-            elif tok == '$e':
-                if not label:
-                    raise MMError('$e must have label')
-                stmt = self.read_non_p_stmt(tok, toks)
-                self.fs.add_e(stmt, label)
-                self.labels[label] = ('$e', stmt)
-                label = None
-            elif tok == '$a':
-                if not label:
-                    raise MMError('$a must have label')
-                self.labels[label] = (
-                    '$a', self.fs.make_assertion(
-                        self.read_non_p_stmt(tok, toks)))
-                label = None
-            elif tok == '$p':
-                if not label:
-                    raise MMError('$p must have label')
-                stmt, proof = self.read_p_stmt(toks)
-                dvs, f_hyps, e_hyps, conclusion = self.fs.make_assertion(stmt)
-                if self.verify_proofs:
-                    vprint(2, 'Verify:', label)
-                    self.verify(f_hyps, e_hyps, conclusion, proof)
-                self.labels[label] = ('$p', (dvs, f_hyps, e_hyps, conclusion))
-                label = None
-            elif tok == '$d':
-                self.fs.add_d(self.read_non_p_stmt(tok, toks))
-            elif tok == '${':
-                self.read(toks)
-            elif tok == '$)':
-                raise MMError("Unexpected '$)' while not within a comment")
-            elif tok[0] != '$':
-                if tok in self.labels:
-                    raise MMError("Label {} multiply defined.".format(tok))
-                if not all(ch.isalnum() or ch in '-_.' for ch in tok):
-                    raise MMError(("Only letters, digits, '_', '-', and '.' are allowed in labels: {}").format(tok))
-                # Label must not conflict with constants or variables - Spec §4.2.1
-                if tok in self.constants:
-                    raise MMError("Label {} conflicts with constant symbol".format(tok))
-                if self.fs.lookup_v(tok):
-                    raise MMError("Label {} conflicts with variable symbol".format(tok))
-                label = tok
-                vprint(20, 'Label:', label)
-                if label == self.stop_label:
-                    # TODO: exit gracefully the nested calls to self.read()
-                    sys.exit(0)
-                if label == self.begin_label:
-                    self.verify_proofs = True
-            else:
-                raise MMError("Unknown token: '{}'.".format(tok))
+        try:
+            label = None
             tok = toks.readc()
-        self.fs.pop()
+            while tok and tok != '$}':
+                if tok == '$c':
+                    for tok in self.read_non_p_stmt(tok, toks):
+                        self.add_c(tok)
+                elif tok == '$v':
+                    for tok in self.read_non_p_stmt(tok, toks):
+                        self.add_v(tok)
+                elif tok == '$f':
+                    stmt = self.read_non_p_stmt(tok, toks)
+                    if not label:
+                        raise MMError(
+                            '$f must have label (statement: {})'.format(stmt))
+                    if len(stmt) != 2:
+                        raise MMError(
+                            '$f must have length two but is {}'.format(stmt))
+                    self.add_f(stmt[0], stmt[1], label)
+                    self.labels[label] = ('$f', [stmt[0], stmt[1]])
+                    label = None
+                elif tok == '$e':
+                    if not label:
+                        raise MMError('$e must have label')
+                    stmt = self.read_non_p_stmt(tok, toks)
+                    self.fs.add_e(stmt, label)
+                    self.labels[label] = ('$e', stmt)
+                    label = None
+                elif tok == '$a':
+                    if not label:
+                        raise MMError('$a must have label')
+                    self.labels[label] = (
+                        '$a', self.fs.make_assertion(
+                            self.read_non_p_stmt(tok, toks)))
+                    label = None
+                elif tok == '$p':
+                    if not label:
+                        raise MMError('$p must have label')
+                    stmt, proof = self.read_p_stmt(toks)
+                    dvs, f_hyps, e_hyps, conclusion = self.fs.make_assertion(stmt)
+                    if self.verify_proofs:
+                        vprint(2, 'Verify:', label)
+                        self.verify(f_hyps, e_hyps, conclusion, proof)
+                    self.labels[label] = ('$p', (dvs, f_hyps, e_hyps, conclusion))
+                    label = None
+                elif tok == '$d':
+                    self.fs.add_d(self.read_non_p_stmt(tok, toks))
+                elif tok == '${':
+                    self.read(toks)
+                elif tok == '$)':
+                    raise MMError("Unexpected '$)' while not within a comment")
+                elif tok[0] != '$':
+                    if tok in self.labels:
+                        raise MMError("Label {} multiply defined.".format(tok))
+                    if not all(ch.isalnum() or ch in '-_.' for ch in tok):
+                        raise MMError(("Only letters, digits, '_', '-', and '.' are allowed in labels: {}").format(tok))
+                    # Label must not conflict with constants or variables - Spec §4.2.1
+                    if tok in self.constants:
+                        raise MMError("Label {} conflicts with constant symbol".format(tok))
+                    if self.fs.lookup_v(tok):
+                        raise MMError("Label {} conflicts with variable symbol".format(tok))
+                    label = tok
+                    vprint(20, 'Label:', label)
+                    if label == self.stop_label:
+                        # TODO: exit gracefully the nested calls to self.read()
+                        sys.exit(0)
+                    if label == self.begin_label:
+                        self.verify_proofs = True
+                else:
+                    raise MMError("Unknown token: '{}'.".format(tok))
+                tok = toks.readc()
+        finally:
+            self.fs.pop()
+            self.block_depth -= 1
 
     def treat_step(self,
                    step: FullStmt,
