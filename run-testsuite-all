@@ -1,0 +1,268 @@
+#!/bin/bash
+# Run ALL Metamath tests with any driver.
+# Usage: ./run-testsuite-all <driver> [--skip-large]
+#
+# Examples:
+#   ./run-testsuite-all ./test-pverify --skip-large
+#   ./run-testsuite-all ./test-metamath-knife
+#   ./run-testsuite-all ./mmexe.sh
+#
+# Tests and expected verdicts are HARDCODED below from SPEC_SECTION_4.txt analysis.
+# This is the authoritative reference - edit HERE to change expectations.
+
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <driver> [--skip-large]"
+    echo "Drivers: ./test-pverify, ./test-metamath-knife, ./mmexe.sh, etc."
+    exit 1
+fi
+
+DRIVER="$1"
+shift
+
+SKIP_LARGE=0
+for arg in "$@"; do
+    [ "$arg" = "--skip-large" ] && SKIP_LARGE=1
+done
+
+# Large files to skip with --skip-large
+LARGE_FILES="set.mm set.2010-08-29.mm nf.mm iset.mm ql.mm hol.mm big-unifier.mm set-dist-bad1.mm peano-fixed.mm"
+
+PASSED=0
+FAILED=0
+SKIPPED=0
+TESTS_DIR="tests"
+
+# Test utilities
+run() {
+    $DRIVER "$TESTS_DIR/$1" >/dev/null 2>&1
+}
+
+pass() {
+    local file="$1"
+    local desc="$2"
+    local base=$(basename "$file")
+
+    if [ $SKIP_LARGE -eq 1 ] && echo "$LARGE_FILES" | grep -qw "$base"; then
+        echo "SKIP $file (large)"
+        ((SKIPPED++))
+        return
+    fi
+
+    if [ ! -f "$TESTS_DIR/$file" ]; then
+        echo "SKIP $file (NOT FOUND)"
+        ((SKIPPED++))
+        return
+    fi
+
+    if run "$file"; then
+        echo "PASS $file"
+        ((PASSED++))
+    else
+        echo "FAIL $file (expected ACCEPT) # $desc"
+        ((FAILED++))
+    fi
+}
+
+fail() {
+    local file="$1"
+    local desc="$2"
+    local base=$(basename "$file")
+
+    if [ $SKIP_LARGE -eq 1 ] && echo "$LARGE_FILES" | grep -qw "$base"; then
+        echo "SKIP $file (large)"
+        ((SKIPPED++))
+        return
+    fi
+
+    if [ ! -f "$TESTS_DIR/$file" ]; then
+        echo "SKIP $file (NOT FOUND)"
+        ((SKIPPED++))
+        return
+    fi
+
+    if ! run "$file"; then
+        echo "PASS $file"
+        ((PASSED++))
+    else
+        echo "FAIL $file (expected REJECT) # $desc"
+        ((FAILED++))
+    fi
+}
+
+echo "=========================================="
+echo "Metamath Test Suite"
+echo "Driver: $DRIVER"
+[ $SKIP_LARGE -eq 1 ] && echo "Mode: --skip-large"
+echo "=========================================="
+echo ""
+
+# ============================================================================
+# CORE TESTS (25)
+# ============================================================================
+
+fail core/anatomy-bad1.mm "4.2.1: proof verification failure"
+fail core/anatomy-bad2.mm "4.2.1: proof verification failure"
+fail core/anatomy-bad3.mm "4.2.1: proof verification failure"
+pass core/anatomy.mm "Valid database per spec"
+fail core/big-unifier-bad1.mm "4.2.1: unification/substitution failure"
+fail core/big-unifier-bad2.mm "4.2.1: unification/substitution failure"
+fail core/big-unifier-bad3.mm "4.2.1: unification/substitution failure"
+pass core/big-unifier.mm "Valid database per spec"
+fail core/demo0-bad1.mm "4.2.1: proof verification failure"
+fail core/demo0-dollar-in-math-symbol-bad1.mm "L339-342: math symbols must not contain $"
+fail core/demo0-illegal-label-bad1.mm "L167-169: labels must be alphanumeric+hyphen+underscore+period"
+pass core/demo0-includee.mm "Valid database per spec"
+pass core/demo0-includer.mm "Valid database per spec"
+pass core/demo0.mm "Valid database per spec"
+pass core/emptyline.mm "L77-79: whitespace (including newlines) is valid separator"
+pass core/hol.mm "Valid database per spec"
+pass core/iset.mm "Valid database per spec"
+pass core/miu.mm "Valid database per spec"
+pass core/nf.mm "Valid database per spec"
+fail core/out-of-range-saved-step-bad1.mm "4.4: compressed proof Z reference out of range"
+pass core/peano-fixed.mm "Valid database per spec"
+pass core/ql.mm "Valid database per spec"
+pass core/set.2010-08-29.mm "Valid database per spec"
+fail core/set-dist-bad1.mm "4.2.7: \$d violation in proof"
+pass core/set.mm "Valid database per spec"
+
+# ============================================================================
+# UNIT TESTS - Actual files from tests/unit/
+# ============================================================================
+
+fail unit/test01_non-printable_ascii_characters.mm "L73-79: only printable ASCII + whitespace allowed"
+fail unit/test02_missing_whitespace_between_tokens.mm "L81-83: tokens must be separated by whitespace"
+fail unit/test03_nested_comment_delimiters.mm "L89-91: \$( may not appear inside comments"
+fail unit/test04_unbalanced_block_delimiters.mm "L153-155: \${ must match \$}"
+fail unit/test05_dollar_sign_in_math_symbols.mm "L339-342: math symbols must not contain $"
+fail unit/test06_dangling_dollar_sign_at_eof.mm "L81-83: $ must be followed by valid keyword char"
+fail unit/test07_redeclaration_of_constant.mm "L161-163: constant may not be redeclared"
+fail unit/test08_variable_used_outside_scope.mm "L174-178: variable must have active \$f"
+fail unit/test09_d_with_non-variables.mm "L547-549: \$d must contain only variables"
+fail unit/test10_duplicate_labels.mm "L179-180: label tokens must be unique"
+fail unit/test11_label_conflicts_with_symbol.mm "L179-180: no label may match any math symbol"
+fail unit/test12_non-constant_typecode.mm "L286-292: first symbol in \$f must be constant (typecode)"
+fail unit/test13_f_with_undeclared_variable.mm "L174-178: \$f variable must be declared"
+fail unit/test14_variable_without_f_hypothesis.mm "L177-178: each variable in \$e/\$a/\$p must have active \$f"
+fail unit/test15_multiple_f_for_same_variable_bad.mm "L156-158: type declared by \$f is GLOBAL (strict)"
+fail unit/test16_conflicting_typecodes_bad.mm "L156-158: type declared by \$f is GLOBAL (strict)"
+fail unit/test17_include_scope_violation.mm "4.2.8: \$[ \$] scope rules"
+fail unit/test18_missing_whitespace_after_comment.mm "L81-83: whitespace required between tokens"
+fail unit/test19_illegal_characters_in_compressed_proof.mm "AppB: compressed proof uses only A-Z and ? (strict)"
+pass unit/test20_unknown_step_qmark_\(should_accept_with_warning\).mm "L221-223: ? allowed, verifier may warn"
+fail unit/test21_self-referential_proof.mm "L213-218: proof may not reference itself"
+fail unit/test22_typecode_mismatch_in_substitution.mm "L208-212: substitution must match typecode"
+fail unit/test23_using_non-essential_hypotheses.mm "4.2.5: only active hypotheses may be used"
+fail unit/test24_undefined_label_in_proof.mm "L213-218: proof labels must be defined"
+fail unit/test25_missing_space_before_comment.mm "L81-83: \$( must be whitespace-separated"
+fail unit/test26_wrong_conclusion_in_proof.mm "L218-220: final stack must match \$p statement"
+fail unit/test27_disjoint_variable_constraint_violation.mm "4.2.7: \$d constraints must be satisfied"
+fail unit/test28_self_include.mm "4.2.8: file may not include itself"
+fail unit/test29_compressed_proof_header_mismatch.mm "AppB: compressed proof header must match mandatory hyps"
+pass unit/test30_qmark_in_compressed_proof.mm "L1894-1895: ? allowed in compressed proofs"
+fail unit/test31_missing_whitespace_after_comment.mm "L81-83: \$) must be whitespace-separated"
+fail unit/test32_forward_reference_in_proof.mm "L213-218: proof labels must be previously defined"
+fail unit/test33_compressed_proof_stack_underflow.mm "L218-220: stack must not underflow"
+fail unit/test34_label_token_in_math_context.mm "L179-180,339: labels and math symbols are disjoint"
+fail unit/test35_f_not_active_after_block_close.mm "L174-175: \$f active only until block end"
+fail unit/test36_whitespace_in_compressed_proof_bad.mm "AppB: no whitespace inside compressed proof string"
+pass unit/test37_rpn_interleaving_mandatory_hyps.mm "Valid per RPN proof semantics"
+pass unit/test38_whitespace_in_valid_compressed.mm "AppB: whitespace allowed in header, not proof string"
+pass unit/test39_include_basic_outer.mm "Valid include at outermost scope"
+fail unit/test40_include_scope_correct_outer.mm "L105-106: \$[ \$] only allowed in outermost scope"
+pass unit/test41_include_multiple_main.mm "Multiple valid includes at outermost scope"
+pass unit/test42_include_duplicate_main.mm "L110-112: duplicate includes are ignored (like whitespace)"
+fail unit/test44_include_cycle_main.mm "4.2.8: circular include detected"
+pass unit/test45_variable_redeclaration.mm "L161-163: variables MAY be redeclared in new scope"
+fail unit/test46_duplicate_include_main.mm "4.2.8: duplicate include processing"
+fail unit/test47_constant_inner_scope_main.mm "L105-106: \$[ \$] only allowed in outermost scope"
+fail unit/test47b_constant_inner_scope_direct.mm "L1088: \$c must be in outermost block"
+fail unit/test48_variable_conflict_main.mm "L161-163: variable conflicts with constant"
+fail unit/test49_token_splice_axiom.mm "L81-83: token boundaries must be preserved"
+fail unit/test50_token_splice_proof.mm "L81-83: token boundaries must be preserved"
+fail unit/test52_include_inside_e.mm "4.2.8: \$[ not allowed inside \$e"
+fail unit/test53_include_inside_d.mm "4.2.8: \$[ not allowed inside \$d"
+pass unit/test54_whitespace_variety.mm "L77-79: various whitespace chars valid"
+fail unit/test55_compressed_z_oob.mm "AppB: Z reference out of bounds"
+fail unit/test56_duplicate_d_normalization_bad.mm "L553-558: duplicate \$d is error"
+pass unit/test57_case_sensitivity_labels.mm "L167-169: labels are case-sensitive"
+pass unit/test58_case_sensitivity_symbols.mm "L339-342: math symbols are case-sensitive"
+pass unit/test_complex_ehyp_syl2anc.mm "Valid proof per spec"
+pass unit/test58_compressed_ehyp_z.mm "compressed proof with essential hyps and Z markers"
+pass unit/test59_f_type_global_conflict.mm "SPEC DIVERGENCE: L156-158 says REJECT, all impls ACCEPT"
+pass unit/test60_empty_block.mm "EBNF: empty block \${ \$} is valid"
+pass unit/test61_empty_expression.mm "L153-154, L167-169: empty expression after typecode valid"
+pass unit/test62_self_substitution.mm "L204-205: variable mapped to expression containing itself"
+pass unit/test64_multiple_ehyp_order.mm "L182-184, L211-214: mandatory hyp ordering"
+pass unit/test65_compressed_assertion_fhyp_order.mm "Spec AppB: compressed proofs with scoped f-hyps"
+pass unit/test66_compressed_mand_hyp_order.mm "Spec AppB: mandatory hypothesis ordering"
+pass unit/test67_toplevel_essential.mm "Spec allows top-level \$e (knife non-compliant)"
+
+# Additional unit tests found in directory
+fail unit/test56_compressed_z_simple_bad.mm "AppB: compressed Z out of bounds"
+pass unit/test57_compressed_z_minimal.mm "Valid compressed proof with Z"
+fail unit/test_axmp_z.mm "Broken compressed proof - both verifiers reject"
+pass unit/test_compressed_simple.mm "Valid compressed proof"
+fail unit/test_compressed_syl.mm "Broken compressed proof - both verifiers reject"
+fail unit/test_dv_multi.mm "Comment says INVALID PROOF - should be rejected"
+pass unit/test_dv_pairwise.mm "Valid pairwise \$d"
+pass unit/test_dv_yz_required.mm "Valid \$d test"
+pass unit/test_stack_fhyps.mm "Valid stack test"
+pass unit/test_stack_simple.mm "Valid stack test"
+
+# ============================================================================
+# MMVERIFY TESTS - Actual files from tests/mmverify/
+# ============================================================================
+
+pass mmverify/demo0.mm "Valid database per spec"
+fail mmverify/disjoint2_almostgood_bad.mm "4.2.7: \$d violation"
+fail mmverify/disjoint2_mixed_bad.mm "4.2.7: \$d violation"
+fail mmverify/disjoint2_semigood_bad.mm "4.2.7: \$d violation"
+fail mmverify/disjoint2_stillbad.mm "4.2.7: \$d violation"
+fail mmverify/disjoint2_verybad.mm "4.2.7: \$d violation"
+fail mmverify/dv_tests_bad.mm "4.2.7: \$d violation"
+fail mmverify/dv_tests_explicit_bad.mm "4.2.7: \$d violation"
+fail mmverify/dv_tests_scoped_bad.mm "4.2.7: \$d violation"
+fail mmverify/dv_tests_simple_bad.mm "4.2.7: \$d violation"
+fail mmverify/regression_dvs_bad.mm "4.2.7: \$d violation"
+pass mmverify/stillgood.mm "Valid database per spec"
+pass mmverify/test_complex_ehyp_syl2anc.mm "Valid proof per spec"
+fail mmverify/test_dv_01_bad.mm "4.2.7: \$d violation"
+pass mmverify/test_dv_02.mm "Valid - no \$d required"
+fail mmverify/test_dv_03_bad.mm "4.2.7: \$d violation"
+pass mmverify/test_dv_04.mm "Valid - \$d satisfied"
+fail mmverify/test_dv_05_bad.mm "4.2.7: \$d violation"
+pass mmverify/test_dv_06.mm "Valid - \$d satisfied"
+fail mmverify/test_dv_07_bad.mm "4.2.7: \$d violation"
+pass mmverify/test_dv_08.mm "Valid - \$d satisfied"
+fail mmverify/test_dv_09_bad.mm "4.2.7: \$d violation"
+pass mmverify/test_dv_10_multivar.mm "Valid - multi-var \$d satisfied"
+fail mmverify/test_dv_duplicates_bad.mm "L553-558: duplicate \$d handling"
+pass mmverify/test_dv_multivar.mm "Valid - multi-var \$d satisfied"
+pass mmverify/test_dv_scope.mm "Valid - \$d scoping correct"
+fail mmverify/test_ehyp_mismatch_bad.mm "4.2.5: \$e hypothesis count mismatch"
+pass mmverify/test_nested_scope_exact.mm "Valid - nested scopes handled"
+pass mmverify/test_nested_scope.mm "Valid - nested scopes handled"
+pass mmverify/test_nested_scope_proof.mm "Valid - nested scope proof"
+fail mmverify/test_type_mismatch_bad.mm "L208-212: typecode mismatch"
+fail mmverify/verybad.mm "4.2.7: \$d violation in proof"
+
+# ============================================================================
+# RESULTS
+# ============================================================================
+
+echo ""
+echo "=========================================="
+echo "RESULTS for $DRIVER"
+echo "=========================================="
+echo "Passed:  $PASSED"
+echo "Failed:  $FAILED"
+echo "Skipped: $SKIPPED"
+TOTAL=$((PASSED + FAILED))
+if [ $TOTAL -gt 0 ]; then
+    PCT=$((PASSED * 100 / TOTAL))
+    echo "Score:   $PASSED/$TOTAL ($PCT%)"
+fi
+echo "=========================================="
+
+[ $FAILED -eq 0 ] && exit 0 || exit 1

@@ -1,12 +1,14 @@
-$( Unit Test 47: $c declaration in inner scope via include $)
+$( Unit Test 47: Include directive inside block $)
 $( Category: CORE - CRITICAL scoping test $)
-$( Should reject: True - $c must be in outermost block $)
-$( Spec Section 4.2.8: "All $c statements must be placed in the outermost block" $)
+$( Should reject: True - include must be in outermost scope $)
+$( Spec Section 4.1.2 L105-106: "$[ $] only allowed in outermost scope" $)
 
 $c wff |- $.
 
 ${
-  $( Include file that contains $c declaration $)
-  $( Since this include is in inner scope, $c is NOT in outermost block $)
+  $( INVALID: Include inside block - must be in outermost scope only $)
   $[ ./helpers/test47_helper.mm $]
+
+  $( Try to use included declarations $)
+  th1 $p |- inner-var $= finner ax-inner $.
 $}

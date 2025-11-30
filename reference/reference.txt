@@ -1,8 +1,19 @@
 # Metamath Test Suite - Authoritative Reference
 # Based on SPEC_SECTION_4.txt analysis
-# 
+#
 # Format: VERDICT path/test.mm # Spec reason
 # Line numbers refer to SPEC_SECTION_4.txt
+#
+# IMPORTANT: This reference reflects THE METAMATH SPEC, not any particular verifier.
+# Known verifier divergences:
+#   - mmexe: LENIENT on includes-in-blocks (test40, test47) - accepts when spec rejects
+#   - metamath-knife: Spec-compliant (all tests match spec)
+#   - pverify: Target for conformance testing
+#
+# Spec citations verified 2025-11-30:
+#   - L105-106: "$[ $] only allowed in outermost scope (not between ${ and $})"
+#   - L111-113: "duplicate includes are ignored (treated like white space)"
+#   - L1088: "All $c statements must be placed in the outermost block"
 
 # ============================================================================
 # CORE TESTS (25)
@@ -52,12 +63,12 @@ REJECT unit/test11_label_conflicts_with_symbol.mm       # L179-180: no label may
 REJECT unit/test12_non-constant_typecode.mm             # L286-292: first symbol in $f must be constant (typecode)
 REJECT unit/test13_f_with_undeclared_variable.mm        # L174-178: $f variable must be declared
 REJECT unit/test14_variable_without_f_hypothesis.mm     # L177-178: each variable in $e/$a/$p must have active $f
-REJECT unit/test15_multiple_f_for_same_variable.mm      # L176-177,891: no two active $f may have same variable
-REJECT unit/test16_conflicting_typecodes.mm             # L176-177,891: no two active $f may have same variable
+REJECT unit/test15_multiple_f_for_same_variable_bad.mm  # L156-158: type declared by $f is GLOBAL even if variable is not
+REJECT unit/test16_conflicting_typecodes_bad.mm         # L156-158: type declared by $f is GLOBAL even if variable is not
 REJECT unit/test17_include_scope_violation.mm           # 4.2.8: $[ $] scope rules
 REJECT unit/test18_missing_whitespace_after_comment.mm  # L81-83: whitespace required between tokens
-REJECT unit/test19_illegal_characters_in_compressed_proof.mm  # AppB: compressed proof uses only A-Z and ?
-ACCEPT unit/test20_unknown_step_qmark_(should_accept_with_warning).mm  # L221-223: ? allowed, verifier may warn
+REJECT unit/test19_illegal_characters_in_compressed_proof.mm  # AppB: compressed proof uses only A-Z and ? (strict)
+ACCEPT unit/test20_unknown_step_qmark_(should_accept_with_warning).mm  # L221-223: ? allowed, verifier may warn (accept with warning)
 REJECT unit/test21_self-referential_proof.mm            # L213-218: proof may not reference itself
 REJECT unit/test22_typecode_mismatch_in_substitution.mm # L208-212: substitution must match typecode
 REJECT unit/test23_using_non-essential_hypotheses.mm    # 4.2.5: only active hypotheses may be used
@@ -67,7 +78,7 @@ REJECT unit/test26_wrong_conclusion_in_proof.mm         # L218-220: final stack 
 REJECT unit/test27_disjoint_variable_constraint_violation.mm  # 4.2.7: $d constraints must be satisfied
 REJECT unit/test28_self_include.mm                      # 4.2.8: file may not include itself
 REJECT unit/test29_compressed_proof_header_mismatch.mm  # AppB: compressed proof header must match mandatory hyps
-ACCEPT unit/test30_qmark_in_compressed_proof.mm         # L1894-1895: ? allowed in compressed proofs
+ACCEPT unit/test30_qmark_in_compressed_proof.mm         # L1894-1895: ? allowed in compressed proofs (accept with warning)
 REJECT unit/test31_missing_whitespace_after_comment.mm  # L81-83: $) must be whitespace-separated
 REJECT unit/test32_forward_reference_in_proof.mm        # L213-218: proof labels must be previously defined
 REJECT unit/test33_compressed_proof_stack_underflow.mm  # L218-220: stack must not underflow
@@ -76,14 +87,15 @@ REJECT unit/test35_f_not_active_after_block_close.mm    # L174-175: $f active on
 REJECT unit/test36_whitespace_in_compressed_proof.mm    # AppB: no whitespace inside compressed proof string
 ACCEPT unit/test37_rpn_interleaving_mandatory_hyps.mm   # Valid per RPN proof semantics
 ACCEPT unit/test38_whitespace_in_valid_compressed.mm    # AppB: whitespace allowed in header, not proof string
-REJECT unit/test39_include_basic_outer.mm               # 4.2.8: include file not found or invalid
-REJECT unit/test40_include_scope_correct_outer.mm       # 4.2.8: include scope violation
-REJECT unit/test41_include_multiple_main.mm             # 4.2.8: include processing error
-REJECT unit/test42_include_duplicate_main.mm            # 4.2.8: duplicate include
+ACCEPT unit/test39_include_basic_outer.mm               # Valid include at outermost scope
+REJECT unit/test40_include_scope_correct_outer.mm       # L105-106: $[ $] only allowed in outermost scope
+ACCEPT unit/test41_include_multiple_main.mm             # Multiple valid includes at outermost scope
+ACCEPT unit/test42_include_duplicate_main.mm            # L110-112: duplicate includes are ignored (like whitespace)
 REJECT unit/test44_include_cycle_main.mm                # 4.2.8: circular include detected
 ACCEPT unit/test45_variable_redeclaration.mm            # L161-163: variables MAY be redeclared in new scope
 REJECT unit/test46_duplicate_include_main.mm            # 4.2.8: duplicate include processing
-REJECT unit/test47_constant_inner_scope_main.mm         # L161-163: $c only allowed at outermost scope
+REJECT unit/test47_constant_inner_scope_main.mm         # L105-106: $[ $] only allowed in outermost scope
+REJECT unit/test47b_constant_inner_scope_direct.mm      # L1088: $c must be in outermost block
 REJECT unit/test48_variable_conflict_main.mm            # L161-163: variable conflicts with constant
 REJECT unit/test49_token_splice_axiom.mm                # L81-83: token boundaries must be preserved
 REJECT unit/test50_token_splice_proof.mm                # L81-83: token boundaries must be preserved
@@ -140,6 +152,7 @@ ACCEPT unit/test62_self_substitution.mm # L204-205: variable mapped to expressio
 ACCEPT unit/test64_multiple_ehyp_order.mm # L182-184, L211-214: mandatory hyp ordering with multiple $e
 
 # Bug isolation tests - compressed proof mandatory hypothesis computation
-ACCEPT unit/test65_compressed_assertion_fhyp_order.mm # Spec AppB: compressed proofs with scoped f-hyps  
+ACCEPT unit/test65_compressed_assertion_fhyp_order.mm # Spec AppB: compressed proofs with scoped f-hyps
 ACCEPT unit/test66_compressed_mand_hyp_order.mm # Spec AppB: mandatory hypothesis ordering
+ACCEPT unit/test67_toplevel_essential.mm # Spec allows top-level $e (metamath-knife non-compliant: REJECTS)
 

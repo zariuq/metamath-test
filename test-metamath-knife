@@ -1,3 +1,9 @@
 #!/bin/sh
+# Run metamath-knife from the directory containing the .mm file
+# so that relative include paths resolve correctly
 
-~/.cargo/bin/metamath-knife --verify --split --jobs 4 --time "$1"
+MMFILE="$1"
+MMDIR="$(cd "$(dirname "$MMFILE")" && pwd)"
+MMBASE="$(basename "$MMFILE")"
+
+cd "$MMDIR" && ~/.cargo/bin/metamath-knife --verify --split --jobs 4 --time "$MMBASE"

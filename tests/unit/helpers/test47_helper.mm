@@ -1,4 +1,6 @@
-$( Helper file for Test 47: Declares $c in non-outermost scope $)
-$( This violates spec Section 4.2.8: "All $c statements must be in outermost block" $)
+$( Helper file for Test 47: Simple declarations $)
+$( Used to test include-in-block violation $)
 
-$c inner-const $.
+$v inner-var $.
+finner $f wff inner-var $.
+ax-inner $a |- inner-var $.
