@@ -10,7 +10,7 @@ ax-x $a |- x $.
 
 ${
   $( Include inside block $)
-  $[ ./helpers/test40_include_scope_correct_inner.mm $]
+  $[ ./helpers/test40_helper.mm $]
 
   $( Use included axiom INSIDE the block - this should work $)
   th1 $p |- y $= wy ax-inner $.

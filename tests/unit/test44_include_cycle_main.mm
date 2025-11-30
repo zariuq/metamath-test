@@ -5,7 +5,7 @@ $( Spec: Include stack tracking prevents infinite loops $)
 $c wff |- $.
 
 $( Include A, which includes B, which tries to include A again $)
-$[ ./helpers/test44_include_cycle_a.mm $]
+$[ ./helpers/test44_helper_a.mm $]
 
 $( Both A and B should be included exactly once $)
 $( Use declarations from both files $)

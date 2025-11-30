@@ -8,4 +8,4 @@ $v x $.
 fx $f wff x $.
 
 $( Include file that also declares $v x - should fail $)
-$[ ./helpers/test48_variable_conflict_helper.mm $]
+$[ ./helpers/test48_helper.mm $]

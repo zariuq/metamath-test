@@ -8,5 +8,5 @@ $c wff |- $.
 ${
   $( Include file that contains $c declaration $)
   $( Since this include is in inner scope, $c is NOT in outermost block $)
-  $[ ./helpers/test47_constant_inner_scope_helper.mm $]
+  $[ ./helpers/test47_helper.mm $]
 $}
