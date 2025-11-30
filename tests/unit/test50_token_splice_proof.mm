@@ -10,4 +10,4 @@ fx $f wff x $.
 ax-x $a |- x $.
 
 $( Include splices proof steps from external file - INVALID $)
-th $p |- x $= $[ ./helpers/test50_token_splice_proof_fragment.mm $] $.
+th $p |- x $= $[ ./helpers/test50_helper.mm $] $.

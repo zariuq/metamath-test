@@ -132,3 +132,14 @@ ACCEPT mmverify/test_nested_scope.mm        # Valid - nested scopes handled corr
 ACCEPT mmverify/test_nested_scope_proof.mm  # Valid - nested scope proof correct
 REJECT mmverify/test_type_mismatch.mm       # L208-212: typecode mismatch in substitution
 REJECT mmverify/verybad.mm                  # 4.2.7: $d violation in proof
+ACCEPT unit/test58_compressed_ehyp_z.mm # compressed proof with essential hypotheses and Z markers
+ACCEPT unit/test59_f_type_global_conflict.mm # SPEC DIVERGENCE: L156-158 says REJECT, all impls ACCEPT
+ACCEPT unit/test60_empty_block.mm # EBNF: empty block ${ $} is valid
+ACCEPT unit/test61_empty_expression.mm # L153-154, L167-169: empty expression after typecode is valid
+ACCEPT unit/test62_self_substitution.mm # L204-205: variable mapped to expression containing itself
+ACCEPT unit/test64_multiple_ehyp_order.mm # L182-184, L211-214: mandatory hyp ordering with multiple $e
+
+# Bug isolation tests - compressed proof mandatory hypothesis computation
+ACCEPT unit/test65_compressed_assertion_fhyp_order.mm # Spec AppB: compressed proofs with scoped f-hyps  
+ACCEPT unit/test66_compressed_mand_hyp_order.mm # Spec AppB: mandatory hypothesis ordering
+

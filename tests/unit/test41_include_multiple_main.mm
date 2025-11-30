@@ -4,10 +4,10 @@ $( Should reject: False - multiple includes should work $)
 $c wff |- $.
 
 $( Include file A $)
-$[ ./helpers/test41_include_multiple_a.mm $]
+$[ ./helpers/test41_helper_a.mm $]
 
 $( Include file B $)
-$[ ./helpers/test41_include_multiple_b.mm $]
+$[ ./helpers/test41_helper_b.mm $]
 
 $( Use content from both includes $)
 th-a $p |- var-a $= fa ax-a $.

@@ -17,15 +17,16 @@ vps  $f wff ps $.
 vch  $f wff ch $.
 
 $( =====================================================
-   Test 5 (nested-good.metta)
+   Test 5 (nested-good.metta - ACTUALLY SHOULD FAIL!)
    ax-dv(x=y, z=w) with {x,y} intersect {z,w} = empty
-   SHOULD PASS
+   SHOULD FAIL - no $d declarations for cross-pairs like (x,z)
+   The axiom $d ph ps requires ALL vars in ph to be disjoint from ALL vars in ps
    ===================================================== $)
 
 $d ph ps $.
 ax-dv $a wff dvpair ph ps $.
 
-dv5_nested_good $p wff dvpair ( x = y ) ( z = w ) $=
+dv5_nested_bad $p wff dvpair ( x = y ) ( z = w ) $=
   vx vy vz vw ax-dv
 $.
 

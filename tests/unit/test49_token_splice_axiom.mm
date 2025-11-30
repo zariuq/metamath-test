@@ -9,4 +9,4 @@ $v x $.
 fx $f wff x $.
 
 $( Include splices tokens into the middle of this statement - INVALID $)
-ax-splice $a $[ ./helpers/test49_token_splice_axiom_fragment.mm $]
+ax-splice $a $[ ./helpers/test49_helper.mm $]
