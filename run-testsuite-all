@@ -1,9 +1,10 @@
 #!/bin/bash
 # Run ALL Metamath tests with any driver.
-# Usage: ./run-testsuite-all <driver> [--skip-large]
+# Usage: ./run-testsuite-all <driver> [--skip-large] [--small-only]
 #
 # Examples:
-#   ./run-testsuite-all ./test-pverify --skip-large
+#   ./run-testsuite-all ./test-pverify --skip-large  # Skip 30+ min tests
+#   ./run-testsuite-all ./test-pverify --small-only  # Only < 2 min tests
 #   ./run-testsuite-all ./test-metamath-knife
 #   ./run-testsuite-all ./mmexe.sh
 #
@@ -11,21 +12,40 @@
 # This is the authoritative reference - edit HERE to change expectations.
 
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <driver> [--skip-large]"
+    echo "Usage: $0 <driver> [--skip-large] [--small-only]"
     echo "Drivers: ./test-pverify, ./test-metamath-knife, ./mmexe.sh, etc."
+    echo ""
+    echo "Options:"
+    echo "  --skip-large   Skip tests taking 30+ minutes (set.mm, set.2010-08-29.mm)"
+    echo "  --small-only   Run only quick tests (< 2 minutes)"
     exit 1
 fi
 
-DRIVER="$1"
+DRIVER="$(realpath $1)"
 shift
 
 SKIP_LARGE=0
+SMALL_ONLY=0
 for arg in "$@"; do
     [ "$arg" = "--skip-large" ] && SKIP_LARGE=1
+    [ "$arg" = "--small-only" ] && SMALL_ONLY=1
 done
 
-# Large files to skip with --skip-large
-LARGE_FILES="set.mm set.2010-08-29.mm nf.mm iset.mm ql.mm hol.mm big-unifier.mm set-dist-bad1.mm peano-fixed.mm"
+# Set up output file with timestamp
+DRIVER_NAME=$(basename "$DRIVER")
+TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
+mkdir -p results
+OUTPUT_FILE="results/${DRIVER_NAME}_${TIMESTAMP}.log"
+
+# Redirect all output to both stdout and the log file
+exec > >(tee "$OUTPUT_FILE") 2>&1
+
+# Large files (30+ minutes) - based on observed pverify runtime with 8GB limit
+LARGE_FILES="set.mm set.2010-08-29.mm"
+
+# Small files (< 2 minutes) - fast tests only
+# Based on observed timings: peano-fixed (0.66s), hol (45s), big-unifier (1:24), most unit tests
+SMALL_FILES="anatomy.mm anatomy-bad1.mm anatomy-bad2.mm anatomy-bad3.mm big-unifier.mm big-unifier-bad1.mm big-unifier-bad2.mm big-unifier-bad3.mm demo0.mm demo0-bad1.mm demo0-dollar-in-math-symbol-bad1.mm demo0-illegal-label-bad1.mm demo0-includee.mm demo0-includer.mm emptyline.mm hol.mm miu.mm out-of-range-saved-step-bad1.mm peano-fixed.mm"
 
 PASSED=0
 FAILED=0
@@ -34,7 +54,12 @@ TESTS_DIR="tests"
 
 # Test utilities
 run() {
-    $DRIVER "$TESTS_DIR/$1" >/dev/null 2>&1
+    local test_path="$1"
+    local test_dir=$(dirname "$TESTS_DIR/$test_path")
+    local test_file=$(basename "$test_path")
+
+    # cd to test directory to handle relative includes ($[ ... $])
+    (cd "$test_dir" && $DRIVER "$test_file" >/dev/null 2>&1)
 }
 
 pass() {
@@ -42,8 +67,15 @@ pass() {
     local desc="$2"
     local base=$(basename "$file")
 
+    # Check skip conditions
     if [ $SKIP_LARGE -eq 1 ] && echo "$LARGE_FILES" | grep -qw "$base"; then
         echo "SKIP $file (large)"
+        ((SKIPPED++))
+        return
+    fi
+
+    if [ $SMALL_ONLY -eq 1 ] && ! echo "$SMALL_FILES" | grep -qw "$base"; then
+        echo "SKIP $file (not small)"
         ((SKIPPED++))
         return
     fi
@@ -58,7 +90,7 @@ pass() {
         echo "PASS $file"
         ((PASSED++))
     else
-        echo "FAIL $file (expected ACCEPT) # $desc"
+        echo "FAIL $file - verifier rejected but should accept # $desc"
         ((FAILED++))
     fi
 }
@@ -68,8 +100,15 @@ fail() {
     local desc="$2"
     local base=$(basename "$file")
 
+    # Check skip conditions
     if [ $SKIP_LARGE -eq 1 ] && echo "$LARGE_FILES" | grep -qw "$base"; then
         echo "SKIP $file (large)"
+        ((SKIPPED++))
+        return
+    fi
+
+    if [ $SMALL_ONLY -eq 1 ] && ! echo "$SMALL_FILES" | grep -qw "$base"; then
+        echo "SKIP $file (not small)"
         ((SKIPPED++))
         return
     fi
@@ -84,7 +123,7 @@ fail() {
         echo "PASS $file"
         ((PASSED++))
     else
-        echo "FAIL $file (expected REJECT) # $desc"
+        echo "FAIL $file - verifier accepted but should reject # $desc"
         ((FAILED++))
     fi
 }
@@ -92,7 +131,9 @@ fail() {
 echo "=========================================="
 echo "Metamath Test Suite"
 echo "Driver: $DRIVER"
-[ $SKIP_LARGE -eq 1 ] && echo "Mode: --skip-large"
+[ $SKIP_LARGE -eq 1 ] && echo "Mode: --skip-large (excludes 30+ min tests)"
+[ $SMALL_ONLY -eq 1 ] && echo "Mode: --small-only (only < 2 min tests)"
+echo "Start Time: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "=========================================="
 echo ""
 
@@ -100,31 +141,49 @@ echo ""
 # CORE TESTS (25)
 # ============================================================================
 
-fail core/anatomy-bad1.mm "4.2.1: proof verification failure"
-fail core/anatomy-bad2.mm "4.2.1: proof verification failure"
-fail core/anatomy-bad3.mm "4.2.1: proof verification failure"
-pass core/anatomy.mm "Valid database per spec"
-fail core/big-unifier-bad1.mm "4.2.1: unification/substitution failure"
-fail core/big-unifier-bad2.mm "4.2.1: unification/substitution failure"
-fail core/big-unifier-bad3.mm "4.2.1: unification/substitution failure"
-pass core/big-unifier.mm "Valid database per spec"
-fail core/demo0-bad1.mm "4.2.1: proof verification failure"
-fail core/demo0-dollar-in-math-symbol-bad1.mm "L339-342: math symbols must not contain $"
-fail core/demo0-illegal-label-bad1.mm "L167-169: labels must be alphanumeric+hyphen+underscore+period"
-pass core/demo0-includee.mm "Valid database per spec"
-pass core/demo0-includer.mm "Valid database per spec"
-pass core/demo0.mm "Valid database per spec"
-pass core/emptyline.mm "L77-79: whitespace (including newlines) is valid separator"
-pass core/hol.mm "Valid database per spec"
-pass core/iset.mm "Valid database per spec"
-pass core/miu.mm "Valid database per spec"
-pass core/nf.mm "Valid database per spec"
-fail core/out-of-range-saved-step-bad1.mm "4.4: compressed proof Z reference out of range"
-pass core/peano-fixed.mm "Valid database per spec"
-pass core/ql.mm "Valid database per spec"
-pass core/set.2010-08-29.mm "Valid database per spec"
-fail core/set-dist-bad1.mm "4.2.7: \$d violation in proof"
-pass core/set.mm "Valid database per spec"
+fail core/small/anatomy-bad1.mm "4.2.1: proof verification failure"
+fail core/small/anatomy-bad2.mm "4.2.1: proof verification failure"
+fail core/small/anatomy-bad3.mm "4.2.1: proof verification failure"
+pass core/small/anatomy.mm "Valid database per spec"
+fail core/medium/big-unifier-bad1.mm "4.2.1: unification/substitution failure"
+fail core/medium/big-unifier-bad2.mm "4.2.1: unification/substitution failure"
+fail core/medium/big-unifier-bad3.mm "4.2.1: unification/substitution failure"
+pass core/medium/big-unifier.mm "Valid database per spec"
+fail core/small/demo0-bad1.mm "4.2.1: proof verification failure"
+fail core/small/demo0-dollar-in-math-symbol-bad1.mm "L339-342: math symbols must not contain $"
+fail core/small/demo0-illegal-label-bad1.mm "L167-169: labels must be alphanumeric+hyphen+underscore+period"
+pass core/small/demo0-includee.mm "Valid database per spec"
+pass core/small/demo0-includer.mm "Valid database per spec"
+pass core/small/demo0.mm "Valid database per spec"
+pass core/small/emptyline.mm "L77-79: whitespace (including newlines) is valid separator"
+pass core/medium/hol.mm "Valid database per spec"
+pass core/medium/iset.mm "Valid database per spec"
+pass core/small/miu.mm "Valid database per spec"
+pass core/medium/nf.mm "Valid database per spec"
+fail core/small/out-of-range-saved-step-bad1.mm "4.4: compressed proof Z reference out of range"
+pass core/medium/peano-fixed.mm "Valid database per spec"
+
+# Additional core/small tests from metamath.exe repo (100% agreement)
+fail core/small/comment1.mm "L81-83: whitespace required between tokens"
+fail core/small/disjoint1.mm "4.2.7: \$d violation in proof"
+fail core/small/disjoint2.mm "4.2.7: \$d violation in proof"
+fail core/small/disjoint3.mm "4.2.7: \$d violation in proof"
+pass core/small/empty.mm "Empty database is valid"
+fail core/small/issue107.mm "4.2.1: proof verification failure (missing hypothesis)"
+pass core/small/issue129.mm "Valid database per spec"
+pass core/small/issue134.mm "Valid database per spec"
+fail core/small/local-var-bad.mm "L161-163: variable scope violation"
+pass core/small/local-var-good.mm "Valid variable scope per spec"
+pass core/small/min_found.mm "Valid database per spec"
+pass core/small/min_not_found.mm "Valid database per spec"
+fail core/small/missing-dollar-p.mm "L1114-1115: missing \$p statement"
+pass core/small/nuniq-gram.mm "Valid database per spec (non-unique grammar allowed)"
+pass core/small/underscores.mm "L167-169: underscores allowed in labels"
+
+pass core/medium/ql.mm "Valid database per spec"
+pass core/large/set.2010-08-29.mm "Valid database per spec"
+fail core/large/set-dist-bad1.mm "4.2.7: \$d violation in proof"
+pass core/large/set.mm "Valid database per spec"
 
 # ============================================================================
 # UNIT TESTS - Actual files from tests/unit/
@@ -263,6 +322,10 @@ if [ $TOTAL -gt 0 ]; then
     PCT=$((PASSED * 100 / TOTAL))
     echo "Score:   $PASSED/$TOTAL ($PCT%)"
 fi
+echo "End Time: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "=========================================="
+echo ""
+echo "Results saved to: $OUTPUT_FILE"
+echo ""
 
 [ $FAILED -eq 0 ] && exit 0 || exit 1
