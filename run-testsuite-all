@@ -43,9 +43,8 @@ exec > >(tee "$OUTPUT_FILE") 2>&1
 # Large files (30+ minutes) - based on observed pverify runtime with 8GB limit
 LARGE_FILES="set.mm set.2010-08-29.mm"
 
-# Small files (< 2 minutes) - fast tests only
-# Based on observed timings: peano-fixed (0.66s), hol (45s), big-unifier (1:24), most unit tests
-SMALL_FILES="anatomy.mm anatomy-bad1.mm anatomy-bad2.mm anatomy-bad3.mm big-unifier.mm big-unifier-bad1.mm big-unifier-bad2.mm big-unifier-bad3.mm demo0.mm demo0-bad1.mm demo0-dollar-in-math-symbol-bad1.mm demo0-illegal-label-bad1.mm demo0-includee.mm demo0-includer.mm emptyline.mm hol.mm miu.mm out-of-range-saved-step-bad1.mm peano-fixed.mm"
+# Small files are in core/small/ directory (< 300 lines)
+# Exception: big-unifier files in core/medium/ are included because they're quick and grouped together
 
 PASSED=0
 FAILED=0
@@ -67,17 +66,29 @@ pass() {
     local desc="$2"
     local base=$(basename "$file")
 
-    # Check skip conditions
-    if [ $SKIP_LARGE -eq 1 ] && echo "$LARGE_FILES" | grep -qw "$base"; then
+    # Check skip conditions for --skip-large: skip files in core/large/
+    if [ $SKIP_LARGE -eq 1 ] && [[ "$file" == core/large/* ]]; then
         echo "SKIP $file (large)"
         ((SKIPPED++))
         return
     fi
 
-    if [ $SMALL_ONLY -eq 1 ] && ! echo "$SMALL_FILES" | grep -qw "$base"; then
-        echo "SKIP $file (not small)"
-        ((SKIPPED++))
-        return
+    # Check skip conditions for --small-only: files < 300 lines, excluding big-unifier-bad*.mm
+    if [ $SMALL_ONLY -eq 1 ]; then
+        # Skip big-unifier-bad files (grouped with big-unifier.mm which is >= 300 lines)
+        if [[ "$base" == big-unifier-bad*.mm ]]; then
+            echo "SKIP $file (grouped with big-unifier)"
+            ((SKIPPED++))
+            return
+        fi
+
+        # Skip files >= 300 lines
+        local linecount=$(wc -l < "$TESTS_DIR/$file" 2>/dev/null || echo "999999")
+        if [ "$linecount" -ge 300 ]; then
+            echo "SKIP $file ($linecount lines)"
+            ((SKIPPED++))
+            return
+        fi
     fi
 
     if [ ! -f "$TESTS_DIR/$file" ]; then
@@ -100,17 +111,29 @@ fail() {
     local desc="$2"
     local base=$(basename "$file")
 
-    # Check skip conditions
-    if [ $SKIP_LARGE -eq 1 ] && echo "$LARGE_FILES" | grep -qw "$base"; then
+    # Check skip conditions for --skip-large: skip files in core/large/
+    if [ $SKIP_LARGE -eq 1 ] && [[ "$file" == core/large/* ]]; then
         echo "SKIP $file (large)"
         ((SKIPPED++))
         return
     fi
 
-    if [ $SMALL_ONLY -eq 1 ] && ! echo "$SMALL_FILES" | grep -qw "$base"; then
-        echo "SKIP $file (not small)"
-        ((SKIPPED++))
-        return
+    # Check skip conditions for --small-only: files < 300 lines, excluding big-unifier-bad*.mm
+    if [ $SMALL_ONLY -eq 1 ]; then
+        # Skip big-unifier-bad files (grouped with big-unifier.mm which is >= 300 lines)
+        if [[ "$base" == big-unifier-bad*.mm ]]; then
+            echo "SKIP $file (grouped with big-unifier)"
+            ((SKIPPED++))
+            return
+        fi
+
+        # Skip files >= 300 lines
+        local linecount=$(wc -l < "$TESTS_DIR/$file" 2>/dev/null || echo "999999")
+        if [ "$linecount" -ge 300 ]; then
+            echo "SKIP $file ($linecount lines)"
+            ((SKIPPED++))
+            return
+        fi
     fi
 
     if [ ! -f "$TESTS_DIR/$file" ]; then
