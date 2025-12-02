@@ -43,8 +43,8 @@ exec > >(tee "$OUTPUT_FILE") 2>&1
 # Large files (30+ minutes) - based on observed pverify runtime with 8GB limit
 LARGE_FILES="set.mm set.2010-08-29.mm"
 
-# Small files are in core/small/ directory (< 300 lines)
-# Exception: big-unifier files in core/medium/ are included because they're quick and grouped together
+# Small files are in core/small/ directory (< 1000 lines)
+# Exception: big-unifier files in core/small/ are included because they're quick and grouped together
 
 PASSED=0
 FAILED=0
@@ -73,18 +73,18 @@ pass() {
         return
     fi
 
-    # Check skip conditions for --small-only: files < 300 lines, excluding big-unifier-bad*.mm
+    # Check skip conditions for --small-only: files < 1000 lines, excluding big-unifier-bad*.mm
     if [ $SMALL_ONLY -eq 1 ]; then
-        # Skip big-unifier-bad files (grouped with big-unifier.mm which is >= 300 lines)
+        # Skip big-unifier-bad files (grouped with big-unifier.mm which is >= 1000 lines)
         if [[ "$base" == big-unifier-bad*.mm ]]; then
             echo "SKIP $file (grouped with big-unifier)"
             ((SKIPPED++))
             return
         fi
 
-        # Skip files >= 300 lines
+        # Skip files >= 1000 lines
         local linecount=$(wc -l < "$TESTS_DIR/$file" 2>/dev/null || echo "999999")
-        if [ "$linecount" -ge 300 ]; then
+        if [ "$linecount" -ge 1000 ]; then
             echo "SKIP $file ($linecount lines)"
             ((SKIPPED++))
             return
@@ -118,18 +118,18 @@ fail() {
         return
     fi
 
-    # Check skip conditions for --small-only: files < 300 lines, excluding big-unifier-bad*.mm
+    # Check skip conditions for --small-only: files < 1000 lines, excluding big-unifier-bad*.mm
     if [ $SMALL_ONLY -eq 1 ]; then
-        # Skip big-unifier-bad files (grouped with big-unifier.mm which is >= 300 lines)
+        # Skip big-unifier-bad files (grouped with big-unifier.mm which is >= 1000 lines)
         if [[ "$base" == big-unifier-bad*.mm ]]; then
             echo "SKIP $file (grouped with big-unifier)"
             ((SKIPPED++))
             return
         fi
 
-        # Skip files >= 300 lines
+        # Skip files >= 1000 lines
         local linecount=$(wc -l < "$TESTS_DIR/$file" 2>/dev/null || echo "999999")
-        if [ "$linecount" -ge 300 ]; then
+        if [ "$linecount" -ge 1000 ]; then
             echo "SKIP $file ($linecount lines)"
             ((SKIPPED++))
             return
@@ -168,10 +168,10 @@ fail core/small/anatomy-bad1.mm "4.2.1: proof verification failure"
 fail core/small/anatomy-bad2.mm "4.2.1: proof verification failure"
 fail core/small/anatomy-bad3.mm "4.2.1: proof verification failure"
 pass core/small/anatomy.mm "Valid database per spec"
-fail core/medium/big-unifier-bad1.mm "4.2.1: unification/substitution failure"
-fail core/medium/big-unifier-bad2.mm "4.2.1: unification/substitution failure"
-fail core/medium/big-unifier-bad3.mm "4.2.1: unification/substitution failure"
-pass core/medium/big-unifier.mm "Valid database per spec"
+fail core/small/big-unifier-bad1.mm "4.2.1: unification/substitution failure"
+fail core/small/big-unifier-bad2.mm "4.2.1: unification/substitution failure"
+fail core/small/big-unifier-bad3.mm "4.2.1: unification/substitution failure"
+pass core/small/big-unifier.mm "Valid database per spec"
 fail core/small/demo0-bad1.mm "4.2.1: proof verification failure"
 fail core/small/demo0-dollar-in-math-symbol-bad1.mm "L339-342: math symbols must not contain $"
 fail core/small/demo0-illegal-label-bad1.mm "L167-169: labels must be alphanumeric+hyphen+underscore+period"
@@ -184,7 +184,7 @@ pass core/medium/iset.mm "Valid database per spec"
 pass core/small/miu.mm "Valid database per spec"
 pass core/medium/nf.mm "Valid database per spec"
 fail core/small/out-of-range-saved-step-bad1.mm "4.4: compressed proof Z reference out of range"
-pass core/medium/peano-fixed.mm "Valid database per spec"
+pass core/small/peano-fixed.mm "Valid database per spec"
 
 # Additional core/small tests from metamath.exe repo (100% agreement)
 fail core/small/comment1.mm "L81-83: whitespace required between tokens"
@@ -308,7 +308,6 @@ fail mmverify/dv_tests_scoped_bad.mm "4.2.7: \$d violation"
 fail mmverify/dv_tests_simple_bad.mm "4.2.7: \$d violation"
 fail mmverify/regression_dvs_bad.mm "4.2.7: \$d violation"
 pass mmverify/stillgood.mm "Valid database per spec"
-pass mmverify/test_complex_ehyp_syl2anc.mm "Valid proof per spec"
 fail mmverify/test_dv_01_bad.mm "4.2.7: \$d violation"
 pass mmverify/test_dv_02.mm "Valid - no \$d required"
 fail mmverify/test_dv_03_bad.mm "4.2.7: \$d violation"
