@@ -51,6 +51,9 @@ FAILED=0
 SKIPPED=0
 TESTS_DIR="tests"
 
+# Record start time for runtime calculation
+START_TIME=$(date +%s)
+
 # Test utilities
 run() {
     local test_path="$1"
@@ -344,6 +347,11 @@ if [ $TOTAL -gt 0 ]; then
     PCT=$((PASSED * 100 / TOTAL))
     echo "Score:   $PASSED/$TOTAL ($PCT%)"
 fi
+END_TIME=$(date +%s)
+RUNTIME=$((END_TIME - START_TIME))
+MINUTES=$((RUNTIME / 60))
+SECONDS=$((RUNTIME % 60))
+echo "Runtime: ${MINUTES}m ${SECONDS}s"
 echo "End Time: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "=========================================="
 echo ""
