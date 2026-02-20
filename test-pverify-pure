@@ -1,0 +1,13 @@
+#!/bin/sh
+# PeTTa pverify (pure, no new-space) Metamath verifier driver
+# Takes .mm file as first argument, returns exit code 0 on success
+
+# Get script directory for relative paths
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Convert relative path to absolute before cd
+MMFILE="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+
+cd "$SCRIPT_DIR/../../PeTTa"
+ulimit -v 6291456  # 6GB memory limit (only affects this script)
+./run.sh ../metamath/pverify/pverify_pure.metta "$MMFILE" --silent > /dev/null 2>&1
