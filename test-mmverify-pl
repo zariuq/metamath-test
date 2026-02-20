@@ -1,0 +1,10 @@
+#!/bin/sh
+# Pure Prolog Metamath verifier driver (mmverify.pl)
+# Takes .mm file as first argument, returns exit code 0 on success
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+MMFILE="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+VERIFIER="$SCRIPT_DIR/../pverify/mmverify.pl"
+
+ulimit -v 6291456  # 6GB memory limit
+swipl -g main -t halt "$VERIFIER" -- "$MMFILE" > /dev/null 2>&1

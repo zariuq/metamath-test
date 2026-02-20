@@ -102,6 +102,9 @@ REJECT unit/test50_token_splice_proof.mm                # L81-83: token boundari
 REJECT unit/test52_include_inside_e.mm                  # 4.2.8: $[ not allowed inside $e
 REJECT unit/test53_include_inside_d.mm                  # 4.2.8: $[ not allowed inside $d
 ACCEPT unit/test54_whitespace_variety.mm                # L77-79: various whitespace chars valid
+ACCEPT unit/test68_formfeed_whitespace.mm              # L77-79: form-feed (0x0C) is whitespace
+REJECT unit/test69_djvars_error_masking.mm              # 4.2.6: $d symbols must be declared variables
+ACCEPT unit/test70_djvars_before_float.mm              # Metamath accepts $d before corresponding $f
 REJECT unit/test55_compressed_z_oob.mm                  # AppB: Z reference out of bounds
 REJECT unit/test56_duplicate_d_normalization.mm         # L553-558: duplicate $d is error (not just normalized)
 ACCEPT unit/test57_case_sensitivity_labels.mm           # L167-169: labels are case-sensitive
@@ -155,4 +158,3 @@ ACCEPT unit/test64_multiple_ehyp_order.mm # L182-184, L211-214: mandatory hyp or
 ACCEPT unit/test65_compressed_assertion_fhyp_order.mm # Spec AppB: compressed proofs with scoped f-hyps
 ACCEPT unit/test66_compressed_mand_hyp_order.mm # Spec AppB: mandatory hypothesis ordering
 ACCEPT unit/test67_toplevel_essential.mm # Spec allows top-level $e (metamath-knife non-compliant: REJECTS)
-
