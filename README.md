@@ -1,64 +1,123 @@
-[![Build Status](https://travis-ci.org/david-a-wheeler/metamath-test.svg?branch=master)](https://travis-ci.org/david-a-wheeler/metamath-test)
+# metamath-test
 
-[Current build results](https://david-a-wheeler.github.io/metamath-test/)
+Metamath verifier conformance suite for parser + proof-checking behavior.
 
-This is metamath-test, a test suite for verifiers implementing
-the metamath specification (see us.metamath.org).
+This repository is focused on verifier correctness, not theorem/library freshness.
 
-This includes a set of test files that *should* and *should not* pass.
-The C metamath implementation includes some sample .mm files,
-but no tests that are intended to *not* pass.  That's not good, because
-if you replaced a verifier with the program "true" it would produce
-the same results :-).  This package includes a
-collection of "negative tests" that should *not* pass, and thus
-more rigorously tests the verifiers.
-This project includes .mm files, but they are
-*not* necessarily the latest version of various theorems.
-The purpose of this project is to test the verification tools themselves.
+## Quick Start
 
-It also includes a set of drivers for running various metamath verifiers,
-and a .travis.yml file that automatically downloads and compiles
-some metamath verifiers, and then tries them on the test files.
-That's helpful, because with a single shared test suite, any error
-found in any verifier can be added to this shared test suite, and that
-helps counter the same error from resurfacing anywhere.
+Full suite (authoritative), using the current recommended driver:
 
-The output conforms to the Test Anything Protocol (TAP); see
-<https://en.wikipedia.org/wiki/Test_Anything_Protocol> and
-<http://testanything.org/>.
+```bash
+./run-testsuite-all ./test-pverify-op-space
+```
 
-Common changes:
-* To add a test, add a new .mm file with the test, and modify
-  run-testsuite to invoke it (using "pass" if it should pass or "fail" if
-  it should fail).
-* To add a new verifier, create a test-... driver to run it, add the name
-  to the file DRIVERS, and modify .travis.yml to auto-download & compile it.
+Common variants:
 
-Key files:
-* run-testsuite-all-drivers : Run testsuite against all drivers in DRIVERS.
-* DRIVERS : Text file, list of drivers. "#" at beginning of line is a comment
-* run-testsuite DRIVERNAME: Run entire testsuite using given driver
-* NAME.mm: Test file, used by run-testsuite
+```bash
+# Fast iteration: skips >=1000-line files and grouped big-unifier negatives
+./run-testsuite-all ./test-pverify-op-space --small-only
 
-In normal use, run all tests by invoking "run-testsuite-all-drivers".
-If you want to run all tests using only the C metamath implementation, type:
+# Skip only the 30+ minute large corpora
+./run-testsuite-all ./test-pverify-op-space --skip-large
 
-    ./run-testsuite ./test-metamath
+# Run against official metamath executable wrapper
+./run-testsuite-all ./mmexe.sh
 
-This testsuite focuses on detecting actual errors in verifying proofs,
-not style or formatting issues.
+# Run against metamath-knife
+./run-testsuite-all ./test-metamath-knife
+```
 
-Currently-supported verifiers:
-* metamath: C metamath implementation by Norm Megill
-* hmmverifier: Haskell implementation by Marnix Klooster
-* smetamath: Rust implementation by Stefan O'Rear
-* checkmm: C++ implementation by Eric Schmidt
-* mmj2: Java implementation by Mel O'Cat and Mario Carneiro
-* mmverifypy: Python implementation by Raph Levien
+## What Is Authoritative
 
-This is MIT licensed, but many of the individual tests are licensed
-under the CC0.
+`run-testsuite-all` is the authoritative executable specification of expected outcomes.
 
-Many of the original test files are from the metamath C implementation.
-My sincere thanks to Norm Megill for his work on metamath.
+- It contains the PASS/FAIL verdict for every active test.
+- It is the source of truth for `tests/core`, `tests/unit`, and `tests/mmverify`.
+- If this README and the script ever differ, trust `run-testsuite-all`.
 
+Current active assertion count in `run-testsuite-all`:
+
+- `core`: 40
+- `unit`: 80
+- `mmverify`: 31
+- `total`: 151
+
+Typical `--small-only` run reports `141/141` with `10` skips.
+
+## Test Layout
+
+Active suite is under `tests/`:
+
+- `tests/core/`
+  - `small/`: targeted baseline and regression files
+  - `medium/`: `hol.mm`, `iset.mm`, `nf.mm`, `ql.mm`
+  - `large/`: `set.mm`, `set.2010-08-29.mm`, `set-dist-bad1.mm`
+- `tests/unit/`
+  - focused spec-edge and parser/proof invariants
+- `tests/unit/helpers/`
+  - include fragments used by unit include/scope tests (not run directly)
+- `tests/mmverify/`
+  - compatibility/regression corpus derived from mmverify-style cases
+
+Legacy/archival content exists at repo root (e.g. `unit-tests/`, top-level `*.mm`) for history/backward compatibility. The active conformance harness runs `tests/...`.
+
+## Driver Contract
+
+A driver is any executable taking one `.mm` path and returning:
+
+- exit `0` = accept
+- nonzero exit = reject
+
+Examples:
+
+- `test-pverify-op`
+- `test-pverify-op-space`
+- `test-pverify-op-stream`
+- `test-metamath-knife`
+- `mmexe.sh`
+- `test-mmverify-pl`
+
+All bundled driver scripts apply a 6GB virtual-memory limit (`ulimit -v 6291456`).
+
+## Reference Policy and Choices
+
+Expected outcomes are spec-driven from `SPEC_SECTION_4.txt`, with explicit policy choices where implementations diverge.
+
+Reference tools used for cross-checking:
+
+- official Metamath executable via `mmexe.sh`
+- `metamath-knife` via `test-metamath-knife`
+- comparison helper: `run_reference_verifiers.sh`
+
+Important explicit choices currently encoded in `run-testsuite-all`:
+
+- Accept incomplete proof marker `?` in normal/compressed proofs (`test20`, `test30`).
+- Enforce outermost-only include usage for specific scope tests (`test40`, `test47`).
+- Treat duplicate includes as ignored where appropriate (`test42`).
+- Accept top-level `$e` (`test67`), with note that `metamath-knife` rejects this case.
+- Keep `test59_f_type_global_conflict.mm` as ACCEPT (documented spec-divergence case; all checked implementations currently accept).
+
+When adding/changing policy, update:
+
+1. `run-testsuite-all` verdict lines and reason comments — **this is the only required change**
+2. `reference/reference.txt` — supplementary prose summary
+3. `SPEC_DIVERGENCES.md` — if behavior diverges from strict spec reading or major implementations
+
+## Adding Tests
+
+1. Add test file under the appropriate active subtree in `tests/`.
+2. Add helper include fragments under `tests/unit/helpers/` if needed.
+3. Add a `pass` or `fail` line in `run-testsuite-all` with reason/spec citation.
+4. Run at least:
+
+```bash
+./run-testsuite-all ./test-pverify-op-space --small-only
+./run-testsuite-all ./mmexe.sh --small-only
+```
+
+## Related Verified Lean Project
+
+Lean-verified Metamath checker project (active branch):
+
+- https://github.com/zariuq/mm-lean4/tree/verified-mm-4.27
