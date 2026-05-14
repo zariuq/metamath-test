@@ -3,4 +3,6 @@
 # Return 0 (true) if it's okay and non-zero (error) if there's a problem.
 # We only report on errors, not on warnings.
 
-./metamath "read $1" 'verify proof *' exit | tee mm.log && [ `egrep -q '?Error' < mm.log; echo $?` -eq 1 ]
+MMEXE="${MMEXE:-./metamath}"
+
+"$MMEXE" "read $1" 'verify proof *' exit | tee mm.log && [ `egrep -q '?Error' < mm.log; echo $?` -eq 1 ]

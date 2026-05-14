@@ -6,23 +6,23 @@ This repository is focused on verifier correctness, not theorem/library freshnes
 
 ## Quick Start
 
-Full suite (authoritative), using the current recommended driver:
+Full suite (authoritative), using a built `mm-lean4` binary through the local wrapper:
 
 ```bash
-./run-testsuite-all ./test-pverify-op-space
+MM_LEAN4=/path/to/mm-lean4/.lake/build/bin/mm-lean4 ./run-testsuite-all ./test-mm-lean4
 ```
 
 Common variants:
 
 ```bash
 # Fast iteration: skips >=1000-line files and grouped big-unifier negatives
-./run-testsuite-all ./test-pverify-op-space --small-only
+MM_LEAN4=/path/to/mm-lean4/.lake/build/bin/mm-lean4 ./run-testsuite-all ./test-mm-lean4 --small-only
 
 # Skip only the 30+ minute large corpora
-./run-testsuite-all ./test-pverify-op-space --skip-large
+MM_LEAN4=/path/to/mm-lean4/.lake/build/bin/mm-lean4 ./run-testsuite-all ./test-mm-lean4 --skip-large
 
 # Run against official metamath executable wrapper
-./run-testsuite-all ./mmexe.sh
+MMEXE=/path/to/metamath ./run-testsuite-all ./test-metamath
 
 # Run against metamath-knife
 ./run-testsuite-all ./test-metamath-knife
@@ -39,11 +39,11 @@ Common variants:
 Current active assertion count in `run-testsuite-all`:
 
 - `core`: 40
-- `unit`: 80
+- `unit`: 79
 - `mmverify`: 31
-- `total`: 151
+- `total`: 150
 
-Typical `--small-only` run reports `141/141` with `10` skips.
+Typical `--small-only` run reports `140/140` with `10` skips.
 
 ## Test Layout
 
@@ -69,14 +69,13 @@ A driver is any executable taking one `.mm` path and returning:
 - exit `0` = accept
 - nonzero exit = reject
 
-Examples:
+Core local comparison drivers:
 
-- `test-pverify-op`
-- `test-pverify-op-space`
-- `test-pverify-op-stream`
+- `test-mm-lean4`
+- `test-metamath`
 - `test-metamath-knife`
-- `mmexe.sh`
-- `test-mmverify-pl`
+
+Other historical/local drivers also exist in the repo.
 
 All bundled driver scripts apply a 6GB virtual-memory limit (`ulimit -v 6291456`).
 
@@ -84,25 +83,28 @@ All bundled driver scripts apply a 6GB virtual-memory limit (`ulimit -v 6291456`
 
 Expected outcomes are spec-driven from `SPEC_SECTION_4.txt`, with explicit policy choices where implementations diverge.
 
-Reference tools used for cross-checking:
+Suggested comparison verifiers:
 
-- official Metamath executable via `mmexe.sh`
+- `mm-lean4` via `test-mm-lean4`
+- official Metamath executable via `test-metamath`
 - `metamath-knife` via `test-metamath-knife`
-- comparison helper: `run_reference_verifiers.sh`
 
 Important explicit choices currently encoded in `run-testsuite-all`:
 
 - Accept incomplete proof marker `?` in normal/compressed proofs (`test20`, `test30`).
-- Enforce outermost-only include usage for specific scope tests (`test40`, `test47`).
+- Enforce outermost-only include usage (`test40`) and outermost-only `$c` declaration (`test47`).
 - Treat duplicate includes as ignored where appropriate (`test42`).
 - Accept top-level `$e` (`test67`), with note that `metamath-knife` rejects this case.
 - Keep `test59_f_type_global_conflict.mm` as ACCEPT (documented spec-divergence case; all checked implementations currently accept).
 
+See `VERIFIER_COMPARISON.md` for the current implementation-difference snapshot
+for `mm-lean4`, `metamath-exe`, and `metamath-knife`.
+
 When adding/changing policy, update:
 
 1. `run-testsuite-all` verdict lines and reason comments — **this is the only required change**
-2. `reference/reference.txt` — supplementary prose summary
-3. `SPEC_DIVERGENCES.md` — if behavior diverges from strict spec reading or major implementations
+2. `reference/reference.txt` — authoritative spec-oriented summary
+3. `VERIFIER_COMPARISON.md` — current implementation differences, if they changed
 
 ## Adding Tests
 
@@ -112,12 +114,13 @@ When adding/changing policy, update:
 4. Run at least:
 
 ```bash
-./run-testsuite-all ./test-pverify-op-space --small-only
-./run-testsuite-all ./mmexe.sh --small-only
+MM_LEAN4=/path/to/mm-lean4/.lake/build/bin/mm-lean4 ./run-testsuite-all ./test-mm-lean4 --small-only
+MMEXE=/path/to/metamath ./run-testsuite-all ./test-metamath --small-only
 ```
 
 ## Related Verified Lean Project
 
-Lean-verified Metamath checker project (active branch):
+Lean-verified Metamath checker project:
 
-- https://github.com/zariuq/mm-lean4/tree/verified-mm-4.27
+- https://github.com/zariuq/mm-lean4/tree/verified-mm-latest
+- versioned branches also available: `verified-mm-4.29`, `verified-mm-4.28`

@@ -1,0 +1,13 @@
+#!/bin/sh
+# Driver for mm-lean4 (Carneiro/Goertzel Lean 4 verifier) in zar mode.
+# zar mode is the strict spec-compliance configuration (the default).
+#
+# Contract: exit 0 on accept, non-zero on reject.
+
+set -u
+
+MM_LEAN4="${MM_LEAN4:-/home/zar/claude/hyperon/metamath/mm-lean4/.lake/build/bin/mm-lean4}"
+
+# zar mode is the binary's default, so this wrapper relies on that default
+# rather than passing an explicit `--mode=zar` flag.
+exec "$MM_LEAN4" "$1"

@@ -3,17 +3,17 @@
 # Usage: ./run-testsuite-all <driver> [--skip-large] [--small-only]
 #
 # Examples:
-#   ./run-testsuite-all ./test-pverify --skip-large  # Skip 30+ min tests
-#   ./run-testsuite-all ./test-pverify --small-only  # Only < 2 min tests
+#   MM_LEAN4=/path/to/mm-lean4/.lake/build/bin/mm-lean4 ./run-testsuite-all ./test-mm-lean4 --skip-large
+#   MM_LEAN4=/path/to/mm-lean4/.lake/build/bin/mm-lean4 ./run-testsuite-all ./test-mm-lean4 --small-only
 #   ./run-testsuite-all ./test-metamath-knife
-#   ./run-testsuite-all ./mmexe.sh
+#   MMEXE=/path/to/metamath ./run-testsuite-all ./test-metamath
 #
 # Tests and expected verdicts are HARDCODED below from SPEC_SECTION_4.txt analysis.
 # This is the authoritative reference - edit HERE to change expectations.
 
 if [ $# -lt 1 ]; then
     echo "Usage: $0 <driver> [--skip-large] [--small-only]"
-    echo "Drivers: ./test-pverify, ./test-metamath-knife, ./mmexe.sh, etc."
+    echo "Drivers: ./test-mm-lean4, ./test-metamath, ./test-metamath-knife, etc."
     echo ""
     echo "Options:"
     echo "  --skip-large   Skip tests taking 30+ minutes (set.mm, set.2010-08-29.mm)"
@@ -40,7 +40,7 @@ OUTPUT_FILE="results/${DRIVER_NAME}_${TIMESTAMP}.log"
 # Redirect all output to both stdout and the log file
 exec > >(tee "$OUTPUT_FILE") 2>&1
 
-# Large files (30+ minutes) - based on observed pverify runtime with 8GB limit
+# Large files (30+ minutes) in practice on slower verifier runs
 LARGE_FILES="set.mm set.2010-08-29.mm"
 
 # Small files are in core/small/ directory (< 1000 lines)
@@ -260,8 +260,7 @@ pass unit/test42_include_duplicate_main.mm "L110-112: duplicate includes are ign
 fail unit/test44_include_cycle_main.mm "4.2.8: circular include detected"
 pass unit/test45_variable_redeclaration.mm "L161-163: variables MAY be redeclared in new scope"
 fail unit/test46_duplicate_include_main.mm "4.2.8: duplicate include processing"
-fail unit/test47_constant_inner_scope_main.mm "L105-106: \$[ \$] only allowed in outermost scope"
-fail unit/test47b_constant_inner_scope_direct.mm "L1088: \$c must be in outermost block"
+fail unit/test47_constant_inner_scope_direct.mm "L1088: \$c must be in outermost block"
 fail unit/test48_variable_conflict_main.mm "L161-163: variable conflicts with constant"
 fail unit/test49_token_splice_axiom.mm "L81-83: token boundaries must be preserved"
 fail unit/test50_token_splice_proof.mm "L81-83: token boundaries must be preserved"

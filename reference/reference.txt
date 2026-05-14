@@ -5,10 +5,7 @@
 # Line numbers refer to SPEC_SECTION_4.txt
 #
 # IMPORTANT: This reference reflects THE METAMATH SPEC, not any particular verifier.
-# Known verifier divergences:
-#   - mmexe: LENIENT on includes-in-blocks (test40, test47) - accepts when spec rejects
-#   - metamath-knife: Spec-compliant (all tests match spec)
-#   - pverify: Target for conformance testing
+# Current implementation differences are summarized in VERIFIER_COMPARISON.md.
 #
 # Spec citations verified 2025-11-30:
 #   - L105-106: "$[ $] only allowed in outermost scope (not between ${ and $})"
@@ -94,8 +91,7 @@ ACCEPT unit/test42_include_duplicate_main.mm            # L110-112: duplicate in
 REJECT unit/test44_include_cycle_main.mm                # 4.2.8: circular include detected
 ACCEPT unit/test45_variable_redeclaration.mm            # L161-163: variables MAY be redeclared in new scope
 REJECT unit/test46_duplicate_include_main.mm            # 4.2.8: duplicate include processing
-REJECT unit/test47_constant_inner_scope_main.mm         # L105-106: $[ $] only allowed in outermost scope
-REJECT unit/test47b_constant_inner_scope_direct.mm      # L1088: $c must be in outermost block
+REJECT unit/test47_constant_inner_scope_direct.mm       # L1088: $c must be in outermost block
 REJECT unit/test48_variable_conflict_main.mm            # L161-163: variable conflicts with constant
 REJECT unit/test49_token_splice_axiom.mm                # L81-83: token boundaries must be preserved
 REJECT unit/test50_token_splice_proof.mm                # L81-83: token boundaries must be preserved
