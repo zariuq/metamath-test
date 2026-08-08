@@ -8,7 +8,9 @@
 #   ./run-testsuite-all ./test-metamath-knife
 #   MMEXE=/path/to/metamath ./run-testsuite-all ./test-metamath
 #
-# Tests and expected verdicts are HARDCODED below from SPEC_SECTION_4.txt analysis.
+# Tests and expected verdicts are HARDCODED below from the official Metamath
+# book (https://us.metamath.org/downloads/metamath.pdf), especially Chapter 4
+# and Appendix B.
 # This is the authoritative reference - edit HERE to change expectations.
 
 if [ $# -lt 1 ]; then
@@ -21,7 +23,7 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
-DRIVER="$(realpath $1)"
+DRIVER="$(realpath "$1")"
 shift
 
 SKIP_LARGE=0
@@ -40,14 +42,12 @@ OUTPUT_FILE="results/${DRIVER_NAME}_${TIMESTAMP}.log"
 # Redirect all output to both stdout and the log file
 exec > >(tee "$OUTPUT_FILE") 2>&1
 
-# Large files (30+ minutes) in practice on slower verifier runs
-LARGE_FILES="set.mm set.2010-08-29.mm"
-
 # Small files are in core/small/ directory (< 1000 lines)
 # Exception: big-unifier files in core/small/ are included because they're quick and grouped together
 
 PASSED=0
 FAILED=0
+HARNESS_ERRORS=0
 SKIPPED=0
 TESTS_DIR="tests"
 
@@ -57,17 +57,19 @@ START_TIME=$(date +%s)
 # Test utilities
 run() {
     local test_path="$1"
-    local test_dir=$(dirname "$TESTS_DIR/$test_path")
-    local test_file=$(basename "$test_path")
+    local test_dir test_file
+    test_dir=$(dirname "$TESTS_DIR/$test_path")
+    test_file=$(basename "$test_path")
 
     # cd to test directory to handle relative includes ($[ ... $])
-    (cd "$test_dir" && $DRIVER "$test_file" >/dev/null 2>&1)
+    (cd "$test_dir" && "$DRIVER" "$test_file" >/dev/null 2>&1)
 }
 
 pass() {
     local file="$1"
     local desc="$2"
-    local base=$(basename "$file")
+    local base linecount
+    base=$(basename "$file")
 
     # Check skip conditions for --skip-large: skip files in core/large/
     if [ $SKIP_LARGE -eq 1 ] && [[ "$file" == core/large/* ]]; then
@@ -86,7 +88,7 @@ pass() {
         fi
 
         # Skip files >= 1000 lines
-        local linecount=$(wc -l < "$TESTS_DIR/$file" 2>/dev/null || echo "999999")
+        linecount=$(wc -l < "$TESTS_DIR/$file" 2>/dev/null || echo "999999")
         if [ "$linecount" -ge 1000 ]; then
             echo "SKIP $file ($linecount lines)"
             ((SKIPPED++))
@@ -100,19 +102,30 @@ pass() {
         return
     fi
 
-    if run "$file"; then
-        echo "PASS $file"
-        ((PASSED++))
-    else
-        echo "FAIL $file - verifier rejected but should accept # $desc"
-        ((FAILED++))
-    fi
+    local status
+    run "$file"
+    status=$?
+    case "$status" in
+        0)
+            echo "PASS $file"
+            ((PASSED++))
+            ;;
+        1)
+            echo "FAIL $file - verifier rejected but should accept # $desc"
+            ((FAILED++))
+            ;;
+        *)
+            echo "HARNESS $file - driver failed with status $status # $desc"
+            ((HARNESS_ERRORS++))
+            ;;
+    esac
 }
 
 fail() {
     local file="$1"
     local desc="$2"
-    local base=$(basename "$file")
+    local base linecount
+    base=$(basename "$file")
 
     # Check skip conditions for --skip-large: skip files in core/large/
     if [ $SKIP_LARGE -eq 1 ] && [[ "$file" == core/large/* ]]; then
@@ -131,7 +144,7 @@ fail() {
         fi
 
         # Skip files >= 1000 lines
-        local linecount=$(wc -l < "$TESTS_DIR/$file" 2>/dev/null || echo "999999")
+        linecount=$(wc -l < "$TESTS_DIR/$file" 2>/dev/null || echo "999999")
         if [ "$linecount" -ge 1000 ]; then
             echo "SKIP $file ($linecount lines)"
             ((SKIPPED++))
@@ -145,13 +158,23 @@ fail() {
         return
     fi
 
-    if ! run "$file"; then
-        echo "PASS $file"
-        ((PASSED++))
-    else
-        echo "FAIL $file - verifier accepted but should reject # $desc"
-        ((FAILED++))
-    fi
+    local status
+    run "$file"
+    status=$?
+    case "$status" in
+        0)
+            echo "FAIL $file - verifier accepted but should reject # $desc"
+            ((FAILED++))
+            ;;
+        1)
+            echo "PASS $file"
+            ((PASSED++))
+            ;;
+        *)
+            echo "HARNESS $file - driver failed with status $status # $desc"
+            ((HARNESS_ERRORS++))
+            ;;
+    esac
 }
 
 echo "=========================================="
@@ -164,7 +187,7 @@ echo "=========================================="
 echo ""
 
 # ============================================================================
-# CORE TESTS (25)
+# CORE TESTS (40)
 # ============================================================================
 
 fail core/small/anatomy-bad1.mm "4.2.1: proof verification failure"
@@ -176,21 +199,21 @@ fail core/small/big-unifier-bad2.mm "4.2.1: unification/substitution failure"
 fail core/small/big-unifier-bad3.mm "4.2.1: unification/substitution failure"
 pass core/small/big-unifier.mm "Valid database per spec"
 fail core/small/demo0-bad1.mm "4.2.1: proof verification failure"
-fail core/small/demo0-dollar-in-math-symbol-bad1.mm "L339-342: math symbols must not contain $"
-fail core/small/demo0-illegal-label-bad1.mm "L167-169: labels must be alphanumeric+hyphen+underscore+period"
+fail core/small/demo0-dollar-in-math-symbol-bad1.mm "Sec. 4.2.1: math symbols must not contain $"
+fail core/small/demo0-illegal-label-bad1.mm "Sec. 4.1.1: labels must be alphanumeric+hyphen+underscore+period"
 pass core/small/demo0-includee.mm "Valid database per spec"
 pass core/small/demo0-includer.mm "Valid database per spec"
 pass core/small/demo0.mm "Valid database per spec"
-pass core/small/emptyline.mm "L77-79: whitespace (including newlines) is valid separator"
+pass core/small/emptyline.mm "Sec. 4.1.1: whitespace (including newlines) is valid separator"
 pass core/medium/hol.mm "Valid database per spec"
 pass core/medium/iset.mm "Valid database per spec"
 pass core/small/miu.mm "Valid database per spec"
 pass core/medium/nf.mm "Valid database per spec"
-fail core/small/out-of-range-saved-step-bad1.mm "4.4: compressed proof Z reference out of range"
+fail core/small/out-of-range-saved-step-bad1.mm "Sec. 4.4.5 / Appendix B: compressed proof Z reference out of range"
 pass core/small/peano-fixed.mm "Valid database per spec"
 
 # Additional core/small tests from metamath.exe repo (100% agreement)
-fail core/small/comment1.mm "L81-83: whitespace required between tokens"
+fail core/small/comment1.mm "Sec. 4.1.1: whitespace required between tokens"
 fail core/small/disjoint1.mm "4.2.7: \$d violation in proof"
 fail core/small/disjoint2.mm "4.2.7: \$d violation in proof"
 fail core/small/disjoint3.mm "4.2.7: \$d violation in proof"
@@ -198,13 +221,13 @@ pass core/small/empty.mm "Empty database is valid"
 fail core/small/issue107.mm "4.2.1: proof verification failure (missing hypothesis)"
 pass core/small/issue129.mm "Valid database per spec"
 pass core/small/issue134.mm "Valid database per spec"
-fail core/small/local-var-bad.mm "L161-163: variable scope violation"
+fail core/small/local-var-bad.mm "Sec. 4.2.3, 4.2.8: variable scope violation"
 pass core/small/local-var-good.mm "Valid variable scope per spec"
 pass core/small/min_found.mm "Valid database per spec"
 pass core/small/min_not_found.mm "Valid database per spec"
-fail core/small/missing-dollar-p.mm "L1114-1115: missing \$p statement"
+fail core/small/missing-dollar-p.mm "Sec. 4.2.6: missing \$p statement"
 pass core/small/nuniq-gram.mm "Valid database per spec (non-unique grammar allowed)"
-pass core/small/underscores.mm "L167-169: underscores allowed in labels"
+pass core/small/underscores.mm "Sec. 4.1.1: underscores allowed in labels"
 
 pass core/medium/ql.mm "Valid database per spec"
 pass core/large/set.2010-08-29.mm "Valid database per spec"
@@ -215,82 +238,109 @@ pass core/large/set.mm "Valid database per spec"
 # UNIT TESTS - Actual files from tests/unit/
 # ============================================================================
 
-fail unit/test01_non-printable_ascii_characters.mm "L73-79: only printable ASCII + whitespace allowed"
-fail unit/test02_missing_whitespace_between_tokens.mm "L81-83: tokens must be separated by whitespace"
-fail unit/test03_nested_comment_delimiters.mm "L89-91: \$( may not appear inside comments"
-fail unit/test04_unbalanced_block_delimiters.mm "L153-155: \${ must match \$}"
-fail unit/test05_dollar_sign_in_math_symbols.mm "L339-342: math symbols must not contain $"
-fail unit/test06_dangling_dollar_sign_at_eof.mm "L81-83: $ must be followed by valid keyword char"
-fail unit/test07_redeclaration_of_constant.mm "L161-163: constant may not be redeclared"
-fail unit/test08_variable_used_outside_scope.mm "L174-178: variable must have active \$f"
-fail unit/test09_d_with_non-variables.mm "L547-549: \$d must contain only variables"
-fail unit/test10_duplicate_labels.mm "L179-180: label tokens must be unique"
-fail unit/test11_label_conflicts_with_symbol.mm "L179-180: no label may match any math symbol"
-fail unit/test12_non-constant_typecode.mm "L286-292: first symbol in \$f must be constant (typecode)"
-fail unit/test13_f_with_undeclared_variable.mm "L174-178: \$f variable must be declared"
-fail unit/test14_variable_without_f_hypothesis.mm "L177-178: each variable in \$e/\$a/\$p must have active \$f"
-fail unit/test15_multiple_f_for_same_variable_bad.mm "L156-158: type declared by \$f is GLOBAL (strict)"
-fail unit/test16_conflicting_typecodes_bad.mm "L156-158: type declared by \$f is GLOBAL (strict)"
-fail unit/test17_include_scope_violation.mm "4.2.8: \$[ \$] scope rules"
-fail unit/test18_missing_whitespace_after_comment.mm "L81-83: whitespace required between tokens"
-fail unit/test19_illegal_characters_in_compressed_proof.mm "AppB: compressed proof uses only A-Z and ? (strict)"
-pass unit/test20_unknown_step_qmark_\(should_accept_with_warning\).mm "L221-223: ? allowed, verifier may warn"
-fail unit/test21_self-referential_proof.mm "L213-218: proof may not reference itself"
-fail unit/test22_typecode_mismatch_in_substitution.mm "L208-212: substitution must match typecode"
+fail unit/test01_non-printable_ascii_characters.mm "Sec. 4.1.1: only printable ASCII + whitespace allowed"
+fail unit/test02_missing_whitespace_between_tokens.mm "Sec. 4.1.1: tokens must be separated by whitespace"
+fail unit/test03_nested_comment_delimiters.mm "Sec. 4.1.2: \$( may not appear inside comments"
+fail unit/test04_unbalanced_block_delimiters.mm "Sec. 4.2.8: \${ must match \$}"
+fail unit/test05_dollar_sign_in_math_symbols.mm "Sec. 4.2.1: math symbols must not contain $"
+fail unit/test06_dangling_dollar_sign_at_eof.mm "Sec. 4.1.1: $ must be followed by a valid keyword character"
+fail unit/test07_redeclaration_of_constant.mm "Sec. 4.2.3, 4.2.8: constant may not be redeclared"
+fail unit/test08_variable_used_outside_scope.mm "Sec. 4.2.5: variable must have active \$f"
+fail unit/test09_d_with_non-variables.mm "Sec. 4.2.4: \$d must contain only variables"
+fail unit/test10_duplicate_labels.mm "Sec. 4.2.5: label tokens must be unique"
+fail unit/test11_label_conflicts_with_symbol.mm "Sec. 4.2.5: no label may match any math symbol"
+fail unit/test12_non-constant_typecode.mm "Sec. 4.2.5: first symbol in \$f must be a constant typecode"
+fail unit/test13_f_with_undeclared_variable.mm "Sec. 4.2.5: \$f variable must be declared"
+fail unit/test14_variable_without_f_hypothesis.mm "Sec. 4.2.5: each variable in \$e/\$a/\$p must have active \$f"
+fail unit/test15_multiple_f_for_same_variable_bad.mm "Sec. 4.2.5: a variable may have only one active \$f statement"
+fail unit/test16_conflicting_typecodes_bad.mm "Sec. 4.2.5: a variable may have only one active \$f statement, including across nested blocks"
+fail unit/test17_include_scope_violation.mm "Sec. 4.1.2: \$[ \$] scope rules"
+fail unit/test18_missing_whitespace_after_comment.mm "Sec. 4.1.1: whitespace required between tokens"
+fail unit/test19_illegal_characters_in_compressed_proof.mm "Sec. 4.4.5 / Appendix B: compressed proof uses only A-Z and ? (strict)"
+pass unit/test20_unknown_step_qmark_\(should_accept_with_warning\).mm "Sec. 4.4.6: ? allowed, verifier may warn"
+fail unit/test21_self-referential_proof.mm "Sec. 4.2.6: proof may not reference itself"
+fail unit/test22_typecode_mismatch_in_substitution.mm "Sec. 4.2.6: substitution must match typecode"
 fail unit/test23_using_non-essential_hypotheses.mm "4.2.5: only active hypotheses may be used"
-fail unit/test24_undefined_label_in_proof.mm "L213-218: proof labels must be defined"
-fail unit/test25_missing_space_before_comment.mm "L81-83: \$( must be whitespace-separated"
-fail unit/test26_wrong_conclusion_in_proof.mm "L218-220: final stack must match \$p statement"
+fail unit/test24_undefined_label_in_proof.mm "Sec. 4.2.6: proof labels must be defined"
+fail unit/test25_missing_space_before_comment.mm "Sec. 4.1.1, 4.1.2: \$( must be whitespace-separated"
+fail unit/test26_wrong_conclusion_in_proof.mm "Sec. 4.2.6: final stack must match the \$p statement"
 fail unit/test27_disjoint_variable_constraint_violation.mm "4.2.7: \$d constraints must be satisfied"
-fail unit/test28_self_include.mm "4.2.8: file may not include itself"
-fail unit/test29_compressed_proof_header_mismatch.mm "AppB: compressed proof header must match mandatory hyps"
-pass unit/test30_qmark_in_compressed_proof.mm "L1894-1895: ? allowed in compressed proofs"
-fail unit/test31_missing_whitespace_after_comment.mm "L81-83: \$) must be whitespace-separated"
-fail unit/test32_forward_reference_in_proof.mm "L213-218: proof labels must be previously defined"
-fail unit/test33_compressed_proof_stack_underflow.mm "L218-220: stack must not underflow"
-fail unit/test34_label_token_in_math_context.mm "L179-180,339: labels and math symbols are disjoint"
-fail unit/test35_f_not_active_after_block_close.mm "L174-175: \$f active only until block end"
-fail unit/test36_whitespace_in_compressed_proof_bad.mm "AppB: no whitespace inside compressed proof string"
+pass unit/test28_self_include.mm "Sec. 4.1.2: a self-reference is ignored (spec: to avoid loops)"
+fail unit/test29_compressed_proof_header_mismatch.mm "Sec. 4.4.5 / Appendix B: compressed proof header must match mandatory hyps"
+pass unit/test30_qmark_in_compressed_proof.mm "Sec. 4.4.6 / Appendix B: ? allowed in compressed proofs"
+fail unit/test31_missing_whitespace_after_comment.mm "Sec. 4.1.1, 4.1.2: \$) must be whitespace-separated"
+fail unit/test32_forward_reference_in_proof.mm "Sec. 4.2.6: proof labels must be previously defined"
+fail unit/test33_compressed_proof_stack_underflow.mm "Sec. 4.2.6: proof stack must not underflow"
+fail unit/test34_label_token_in_math_context.mm "Sec. 4.2.1, 4.2.5: labels and math symbols are disjoint"
+fail unit/test35_f_not_active_after_block_close.mm "Sec. 4.2.5: \$f is active only until block end"
+fail unit/test36_whitespace_in_compressed_proof_bad.mm "Sec. 4.4.5 / Appendix B: no whitespace inside compressed proof string"
 pass unit/test37_rpn_interleaving_mandatory_hyps.mm "Valid per RPN proof semantics"
-pass unit/test38_whitespace_in_valid_compressed.mm "AppB: whitespace allowed in header, not proof string"
+pass unit/test38_whitespace_in_valid_compressed.mm "Sec. 4.4.5 / Appendix B: whitespace allowed in the header, not the proof string"
 pass unit/test39_include_basic_outer.mm "Valid include at outermost scope"
-fail unit/test40_include_scope_correct_outer.mm "L105-106: \$[ \$] only allowed in outermost scope"
+fail unit/test40_include_scope_correct_outer.mm "Sec. 4.1.2: \$[ \$] only allowed in outermost scope"
 pass unit/test41_include_multiple_main.mm "Multiple valid includes at outermost scope"
-pass unit/test42_include_duplicate_main.mm "L110-112: duplicate includes are ignored (like whitespace)"
-fail unit/test44_include_cycle_main.mm "4.2.8: circular include detected"
-pass unit/test45_variable_redeclaration.mm "L161-163: variables MAY be redeclared in new scope"
-fail unit/test46_duplicate_include_main.mm "4.2.8: duplicate include processing"
-fail unit/test47_constant_inner_scope_direct.mm "L1088: \$c must be in outermost block"
-fail unit/test48_variable_conflict_main.mm "L161-163: variable conflicts with constant"
-fail unit/test49_token_splice_axiom.mm "L81-83: token boundaries must be preserved"
-fail unit/test50_token_splice_proof.mm "L81-83: token boundaries must be preserved"
-fail unit/test52_include_inside_e.mm "4.2.8: \$[ not allowed inside \$e"
-fail unit/test53_include_inside_d.mm "4.2.8: \$[ not allowed inside \$d"
-pass unit/test54_whitespace_variety.mm "L77-79: various whitespace chars valid"
-pass unit/test68_formfeed_whitespace.mm "L77-79: form-feed (0x0C) is whitespace"
-fail unit/test69_djvars_error_masking.mm "4.2.6: \$d symbols must be declared variables"
-pass unit/test70_djvars_before_float.mm "Metamath accepts \$d before corresponding \$f declarations"
-fail unit/test55_compressed_z_oob.mm "AppB: Z reference out of bounds"
-fail unit/test56_duplicate_d_normalization_bad.mm "L553-558: duplicate \$d is error"
-pass unit/test57_case_sensitivity_labels.mm "L167-169: labels are case-sensitive"
-pass unit/test58_case_sensitivity_symbols.mm "L339-342: math symbols are case-sensitive"
+pass unit/test42_include_duplicate_main.mm "Sec. 4.1.2: duplicate includes are ignored (like whitespace)"
+pass unit/test44_include_cycle_main.mm "Sec. 4.1.2: a cyclic include is a later reference, ignored"
+pass unit/test45_variable_redeclaration.mm "Sec. 4.2.3, 4.2.8: variables may be redeclared in a new scope"
+fail unit/test46_duplicate_include_main.mm "Sec. 4.1.2: include directives must be outermost"
+fail unit/test47_constant_inner_scope_direct.mm "Sec. 4.2.8: \$c must be in the outermost block"
+fail unit/test48_variable_conflict_main.mm "Sec. 4.2.3, 4.2.8: variable conflicts with constant"
+fail unit/test49_token_splice_axiom.mm "Sec. 4.1.1, 4.1.2: token boundaries must be preserved"
+fail unit/test50_token_splice_proof.mm "Sec. 4.1.1, 4.1.2: token boundaries must be preserved"
+fail unit/test52_include_inside_e.mm "Sec. 4.1.2: \$[ not allowed inside a statement"
+fail unit/test53_include_inside_d.mm "Sec. 4.1.2: \$[ not allowed inside a statement"
+pass unit/test54_whitespace_variety.mm "Sec. 4.1.1: various whitespace characters are valid"
+pass unit/test68_formfeed_whitespace.mm "Sec. 4.1.1: form-feed (0x0C) is whitespace"
+fail unit/test69_djvars_error_masking.mm "Sec. 4.2.4: \$d symbols must be declared variables"
+pass unit/test70_djvars_before_float.mm "Sec. 4.2.4: \$d requires declared variables, not prior \$f declarations"
+fail unit/test71_empty_dollar_d.mm "Sec. 4.2.4: \$d requires at least two variables"
+fail unit/test72_single_variable_dollar_d.mm "Sec. 4.2.4: \$d requires at least two variables"
+pass unit/test73_compound_dollar_d.mm "Sec. 4.2.4: compound \$d with three variables is legal"
+pass unit/test74_dollar_d_comment_interleaved.mm "Sec. 4.1.2: a comment inside \$d does not break accumulation"
+pass unit/test75_dollar_d_nested_scope.mm "Sec. 4.2.8: \$d is legal inside a nested block"
+fail unit/test76_unclosed_dollar_d.mm "Sec. 4.2.4: unterminated \$d is unclosed, not too-short"
+fail unit/test77_empty_constant_statement.mm "App. E: \$c requires at least one constant"
+fail unit/test78_empty_variable_statement.mm "App. E: \$v requires at least one variable"
+pass unit/test79_multi_constant_and_variable.mm "App. E: multi-symbol \$c/\$v remain legal"
+fail unit/test80_variable_redeclared_while_active.mm "Sec. 4.2.2: a variable may not be redeclared while active"
+fail unit/test81_inactive_variable_in_dollar_d.mm "Sec. 4.2.4: \$d requires ACTIVE variables, not merely declared ones"
+fail unit/test82_inactive_variable_in_float.mm "Sec. 4.2.2: a math symbol must be active, not merely declared"
+pass unit/test83_variable_reactivated_after_block.mm "Sec. 4.2.2: a variable may be redeclared once its block has been popped"
+pass unit/test84_outer_var_survives_inner_pop.mm "Sec. 4.2.2: a top-level variable stays active after an inner block closes"
+pass unit/test85_nested_var_survives_deeper_pop.mm "Sec. 4.2.2: an outer-block variable stays active after a deeper block closes"
+pass unit/test86_sibling_block_reactivation.mm "Sec. 4.2.2: the same name may be declared in sibling blocks"
+fail unit/test87_include_child_unclosed_var.mm "Sec. 4.1.2: an included file may not end mid-statement"
+fail unit/test88_include_child_unclosed_comment.mm "Sec. 4.1.2: an included file may not end inside a comment"
+fail unit/test89_include_child_unclosed_block.mm "Sec. 4.1.2: an included file may not end with a block open"
+fail unit/test90_include_child_unclosed_axiom.mm "Sec. 4.1.2: an included file may not end mid-\$a"
+fail unit/test91_include_child_unclosed_proof.mm "Sec. 4.1.2: an included file may not end mid-\$p"
+pass unit/test92_include_child_balanced_block.mm "Sec. 4.1.2: a child may open and close its own block"
+fail unit/test93_include_child_unclosed_include.mm "Sec. 4.1.2: an included file may not end inside an unfinished \$["
+pass unit/test94_include_child_empty.mm "Sec. 4.1.2: an empty included file is a legal boundary"
+pass unit/test95_include_child_comment_only.mm "Sec. 4.1.2: a child holding only a complete comment is a legal boundary"
+pass unit/test96_include_nested_origins.mm "Sec. 4.1.2: nested includes; \$a and \$p may close exactly at file boundaries"
+fail unit/test97_illegal_character_mid_compressed_number.mm "Sec. 4.4.5 / Appendix B: illegal byte inside an unfinished U-Y compressed number"
+fail unit/test55_compressed_z_oob.mm "Sec. 4.4.5 / Appendix B: Z reference out of bounds"
+fail unit/test56_duplicate_d_normalization_bad.mm "Sec. 4.2.4: duplicate \$d is normalized, not treated as a separate restriction"
+pass unit/test57_case_sensitivity_labels.mm "Sec. 4.1.1, 4.2.1: labels are case-sensitive"
+pass unit/test58_case_sensitivity_symbols.mm "Sec. 4.2.1: math symbols are case-sensitive"
 pass unit/test_complex_ehyp_syl2anc.mm "Valid proof per spec"
-pass unit/test58_compressed_ehyp_z.mm "compressed proof with essential hyps and Z markers"
-pass unit/test59_f_type_global_conflict.mm "SPEC DIVERGENCE: L156-158 says REJECT, all impls ACCEPT"
-pass unit/test60_empty_block.mm "EBNF: empty block \${ \$} is valid"
-pass unit/test61_empty_expression.mm "L153-154, L167-169: empty expression after typecode valid"
-pass unit/test62_self_substitution.mm "L204-205: variable mapped to expression containing itself"
-pass unit/test64_multiple_ehyp_order.mm "L182-184, L211-214: mandatory hyp ordering"
-pass unit/test65_compressed_assertion_fhyp_order.mm "Spec AppB: compressed proofs with scoped f-hyps"
-pass unit/test66_compressed_mand_hyp_order.mm "Spec AppB: mandatory hypothesis ordering"
-pass unit/test67_toplevel_essential.mm "Spec allows top-level \$e (knife non-compliant)"
+pass unit/test58_compressed_ehyp_z.mm "Sec. 4.4.5 / Appendix B: compressed proof with essential hypotheses and Z markers"
+pass unit/test59_f_type_global_conflict.mm "SPEC DIVERGENCE: Sec. 4.2.5 says REJECT, all impls ACCEPT"
+pass unit/test60_empty_block.mm "Sec. 4.2.8: empty block \${ \$} is valid"
+pass unit/test61_empty_expression.mm "Sec. 4.2.5: empty expression after typecode is valid"
+pass unit/test62_self_substitution.mm "Sec. 4.2.6: a variable may map to an expression containing itself"
+pass unit/test64_multiple_ehyp_order.mm "Sec. 4.2.5, 4.2.6: mandatory hypothesis ordering"
+pass unit/test65_compressed_assertion_fhyp_order.mm "Sec. 4.4.5 / Appendix B: compressed proofs with scoped f-hyps"
+pass unit/test66_compressed_mand_hyp_order.mm "Sec. 4.4.5 / Appendix B: mandatory hypothesis ordering"
+pass unit/test67_toplevel_essential.mm "Sec. 4.2.5, 4.2.8: top-level \$e is allowed (knife non-compliant)"
 
 # Additional unit tests found in directory
-fail unit/test56_compressed_z_simple_bad.mm "AppB: compressed Z out of bounds"
+fail unit/test56_compressed_z_simple_bad.mm "Sec. 4.4.5 / Appendix B: compressed Z reference out of bounds"
 pass unit/test57_compressed_z_minimal.mm "Valid compressed proof with Z"
 fail unit/test_axmp_z.mm "Broken compressed proof - both verifiers reject"
 pass unit/test_compressed_simple.mm "Valid compressed proof"
-fail unit/test_compressed_syl.mm "Broken compressed proof - both verifiers reject"
+pass unit/test_compressed_syl.mm "Valid compressed proof: A-E push the five mandatory hypotheses and F applies ax-syl"
 fail unit/test_dv_multi.mm "Comment says INVALID PROOF - should be rejected"
 pass unit/test_dv_pairwise.mm "Valid pairwise \$d"
 pass unit/test_dv_yz_required.mm "Valid \$d test"
@@ -323,14 +373,14 @@ fail mmverify/test_dv_07_bad.mm "4.2.7: \$d violation"
 pass mmverify/test_dv_08.mm "Valid - \$d satisfied"
 fail mmverify/test_dv_09_bad.mm "4.2.7: \$d violation"
 pass mmverify/test_dv_10_multivar.mm "Valid - multi-var \$d satisfied"
-fail mmverify/test_dv_duplicates_bad.mm "L553-558: duplicate \$d handling"
+fail mmverify/test_dv_duplicates_bad.mm "Sec. 4.2.4, 4.2.7: duplicate \$d handling"
 pass mmverify/test_dv_multivar.mm "Valid - multi-var \$d satisfied"
 pass mmverify/test_dv_scope.mm "Valid - \$d scoping correct"
 fail mmverify/test_ehyp_mismatch_bad.mm "4.2.5: \$e hypothesis count mismatch"
 pass mmverify/test_nested_scope_exact.mm "Valid - nested scopes handled"
 pass mmverify/test_nested_scope.mm "Valid - nested scopes handled"
 pass mmverify/test_nested_scope_proof.mm "Valid - nested scope proof"
-fail mmverify/test_type_mismatch_bad.mm "L208-212: typecode mismatch"
+fail mmverify/test_type_mismatch_bad.mm "Sec. 4.2.6: typecode mismatch"
 fail mmverify/verybad.mm "4.2.7: \$d violation in proof"
 
 # ============================================================================
@@ -343,8 +393,9 @@ echo "RESULTS for $DRIVER"
 echo "=========================================="
 echo "Passed:  $PASSED"
 echo "Failed:  $FAILED"
+echo "Harness errors: $HARNESS_ERRORS"
 echo "Skipped: $SKIPPED"
-TOTAL=$((PASSED + FAILED))
+TOTAL=$((PASSED + FAILED + HARNESS_ERRORS))
 if [ $TOTAL -gt 0 ]; then
     PCT=$((PASSED * 100 / TOTAL))
     echo "Score:   $PASSED/$TOTAL ($PCT%)"
@@ -360,4 +411,10 @@ echo ""
 echo "Results saved to: $OUTPUT_FILE"
 echo ""
 
-[ $FAILED -eq 0 ] && exit 0 || exit 1
+if [ $HARNESS_ERRORS -gt 0 ]; then
+    exit 2
+fi
+if [ $FAILED -gt 0 ]; then
+    exit 1
+fi
+exit 0

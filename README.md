@@ -21,11 +21,11 @@ MM_LEAN4=/path/to/mm-lean4/.lake/build/bin/mm-lean4 ./run-testsuite-all ./test-m
 # Skip only the 30+ minute large corpora
 MM_LEAN4=/path/to/mm-lean4/.lake/build/bin/mm-lean4 ./run-testsuite-all ./test-mm-lean4 --skip-large
 
-# Run against official metamath executable wrapper
+# Run against the official metamath executable
 MMEXE=/path/to/metamath ./run-testsuite-all ./test-metamath
 
 # Run against metamath-knife
-./run-testsuite-all ./test-metamath-knife
+METAMATH_KNIFE=/path/to/metamath-knife ./run-testsuite-all ./test-metamath-knife
 ```
 
 ## What Is Authoritative
@@ -39,11 +39,11 @@ MMEXE=/path/to/metamath ./run-testsuite-all ./test-metamath
 Current active assertion count in `run-testsuite-all`:
 
 - `core`: 40
-- `unit`: 79
+- `unit`: 106
 - `mmverify`: 31
-- `total`: 150
+- `total`: 177
 
-Typical `--small-only` run reports `140/140` with `10` skips.
+A `--small-only` run reports `167/167` with `10` skips for a conforming verifier.
 
 ## Test Layout
 
@@ -67,7 +67,8 @@ Legacy/archival content exists at repo root (e.g. `unit-tests/`, top-level `*.mm
 A driver is any executable taking one `.mm` path and returning:
 
 - exit `0` = accept
-- nonzero exit = reject
+- exit `1` = semantic rejection
+- exit `2` or higher = harness/process failure
 
 Core local comparison drivers:
 
@@ -77,11 +78,12 @@ Core local comparison drivers:
 
 Other historical/local drivers also exist in the repo.
 
-All bundled driver scripts apply a 6GB virtual-memory limit (`ulimit -v 6291456`).
-
 ## Reference Policy and Choices
 
-Expected outcomes are spec-driven from `SPEC_SECTION_4.txt`, with explicit policy choices where implementations diverge.
+Expected outcomes are spec-driven from the
+[Metamath book](https://us.metamath.org/downloads/metamath.pdf),
+especially Chapter 4 and Appendix B, with explicit policy choices where
+implementations diverge.
 
 Suggested comparison verifiers:
 
@@ -100,17 +102,17 @@ Important explicit choices currently encoded in `run-testsuite-all`:
 See `VERIFIER_COMPARISON.md` for the current implementation-difference snapshot
 for `mm-lean4`, `metamath-exe`, and `metamath-knife`.
 
-When adding/changing policy, update:
+When adding or changing policy, update:
 
-1. `run-testsuite-all` verdict lines and reason comments — **this is the only required change**
-2. `reference/reference.txt` — authoritative spec-oriented summary
-3. `VERIFIER_COMPARISON.md` — current implementation differences, if they changed
+1. `run-testsuite-all` verdict lines and reason comments.
+2. `reference/reference.txt` to keep the spec-oriented summary synchronized.
+3. `VERIFIER_COMPARISON.md` if implementation differences changed.
 
 ## Adding Tests
 
-1. Add test file under the appropriate active subtree in `tests/`.
+1. Add the test file under the appropriate active subtree.
 2. Add helper include fragments under `tests/unit/helpers/` if needed.
-3. Add a `pass` or `fail` line in `run-testsuite-all` with reason/spec citation.
+3. Add a `pass` or `fail` line in `run-testsuite-all` with a reason/spec citation.
 4. Run at least:
 
 ```bash

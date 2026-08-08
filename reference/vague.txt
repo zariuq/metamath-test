@@ -1,7 +1,9 @@
 # Vague Tests - Where Reference Verifiers Disagree
 #
 # These tests expose differences between metamath.exe and metamath-knife.
-# We document the spec-compliant interpretation based on SPEC_SECTION_4.txt.
+# We document the spec-compliant interpretation based on the Metamath book
+# (https://us.metamath.org/downloads/metamath.pdf), especially Chapter 4 and
+# Appendix B.
 #
 # Format: VERDICT test_name metamath_result knife_result spec_analysis
 #
@@ -11,8 +13,7 @@
 #   WARN   = should accept but warn (incomplete proof)
 
 # test15: Multiple $f for same variable in same scope
-# Spec line 176-177: "There may not be two active $f statements containing the same variable"
-# Spec line 891: "No two $f statements may contain the same variable"
+# Sec. 4.2.5: "There may not be two active $f statements containing the same variable"
 # Both f1 and f2 are active simultaneously in global scope -> violates spec
 REJECT vague/test15_multiple_f_for_same_variable.mm metamath:ACCEPT knife:REJECT knife_correct
 
@@ -22,19 +23,19 @@ REJECT vague/test15_multiple_f_for_same_variable.mm metamath:ACCEPT knife:REJECT
 REJECT vague/test16_conflicting_typecodes.mm metamath:ACCEPT knife:REJECT knife_correct
 
 # test19: Illegal character '0' in compressed proof
-# Compressed proofs use only A-Z (and ? for unknown steps)
+# Sec. 4.4.5 / Appendix B: compressed proofs use only A-Z (and ? for unknown steps)
 # '0' is not a valid compressed proof character -> syntax error
 REJECT vague/test19_illegal_characters_in_compressed_proof.mm metamath:REJECT knife:ACCEPT metamath_correct
 
 # test20: Unknown step ? in normal proof
-# Spec line 221-223: "A proof may contain a ? in place of a label to indicate
+# Sec. 4.4.6: "A proof may contain a ? in place of a label to indicate
 # an unknown step. A proof verifier may ignore any proof containing ? but
 # should warn the user that the proof is incomplete."
 # Verifier MAY ignore but should WARN - this is not a rejection condition
 WARN vague/test20_unknown_step_qmark_(should_accept_with_warning).mm metamath:ACCEPT knife:REJECT metamath_correct
 
 # test30: ? in compressed proof
-# Spec lines 1894-1895: "Note that partially developed proofs may be saved in
+# Sec. 4.4.6 / Appendix B: "Note that partially developed proofs may be saved in
 # compressed format if desired. In this case, you will see one or more ?'s
 # in the compressed-proof part."
 # Explicitly allowed by spec for work-in-progress proofs

@@ -1,12 +1,19 @@
 #!/bin/sh
 # Driver for mm-lean4 (Carneiro/Goertzel Lean 4 verifier) in zar mode.
-# zar mode is the strict spec-compliance configuration (the default).
+# zar mode is the default and the suite's spec-facing comparison mode.
 #
-# Contract: exit 0 on accept, non-zero on reject.
+# Contract: exit 0 on acceptance, 1 on semantic rejection, and 2 on harness
+# failure.
 
 set -u
 
-MM_LEAN4="${MM_LEAN4:-/home/zar/claude/hyperon/metamath/mm-lean4/.lake/build/bin/mm-lean4}"
+# Fail-closed: the suite must name the exact binary it tests.  A silent
+# default can point at a stale build and make the whole run meaningless.
+: "${MM_LEAN4:?MM_LEAN4 must name the freshly built mm-lean4 binary}"
+if [ ! -x "$MM_LEAN4" ]; then
+  echo "MM_LEAN4 is not an executable file: $MM_LEAN4" >&2
+  exit 2
+fi
 
 # zar mode is the binary's default, so this wrapper relies on that default
 # rather than passing an explicit `--mode=zar` flag.

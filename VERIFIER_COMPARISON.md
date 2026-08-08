@@ -9,14 +9,19 @@ If this file and `run-testsuite-all` ever disagree, trust `run-testsuite-all`.
 
 Current full-suite snapshot from the latest recorded runs:
 
-| Driver | Verifier | Score | Diverging tests | Log |
-|--------|----------|-------|-----------------|-----|
-| `test-mm-lean4` | `mm-lean4` (zar mode) | `150/150` | none | `results/test-mm-lean4_20260514_122911.log` |
-| `test-metamath` | `metamath-exe` | `145/150` | `test15`, `test16`, `test40`, `test49`, `test50` | `results/test-metamath_20260514_163702.log` |
-| `test-metamath-knife` | `metamath-knife` | `147/150` | `test20`, `test30`, `test67` | `results/test-metamath-knife_20260513_133506.log` |
+| Driver | Verifier | Result | Semantic differences | Harness failures | Log |
+|--------|----------|--------|----------------------|------------------|-----|
+| `test-mm-lean4` | `mm-lean4` (zar mode) | `177/177` | none | none | `results/test-mm-lean4_20260808_135512.log` |
+| `test-metamath` | `metamath-exe` | `166/177` | `test15`, `test16`, `test28`, `test40`, `test44`, `test49`, `test50`, `test87`, `test89`, `test90`, `test91` | none | `results/test-metamath_20260808_135512.log` |
+| `test-metamath-knife` | `metamath-knife` | `169/177` | `test19`, `test20`, `test28`, `test30`, `test44`, `test67` | `test01`, `test48` | `results/test-metamath-knife_20260808_135512.log` |
 
 This comparison tracks the harness drivers above. Mode-level differences inside
 `mm-lean4` are documented in that project's `ModeConfig`.
+
+The independent tri-valued differential compared semantic verdicts for
+`175/177` knife cases with zero mirror mismatches. `metamath-knife` terminated
+abnormally on `test01` and `test48`; these are process failures, not semantic
+rejections. `run-testsuite-all` preserves those outcomes as harness failures.
 
 ## What The Harness Means
 
@@ -27,35 +32,42 @@ This comparison tracks the harness drivers above. Mode-level differences inside
 
 ## mm-lean4
 
-`mm-lean4` in zar mode currently matches the full suite exactly: `150/150`.
+`mm-lean4` in zar mode currently matches the full suite exactly: `177/177`.
 
 In this harness, `test-mm-lean4` is the primary spec-facing comparison driver.
 
 ## metamath-exe
 
-`metamath-exe` currently diverges on five tests:
+`metamath-exe` currently diverges on eleven tests:
 
 In this harness, `test-metamath` is the public comparison driver for
 `metamath-exe`.
 
 - `test15_multiple_f_for_same_variable_bad.mm`
-  - accepts a case the harness rejects under the strict reading that `$f`
-    type declarations are global
+  - accepts a second `$f` for a variable while the first `$f` is still active
 - `test16_conflicting_typecodes_bad.mm`
-  - same global-`$f` issue as `test15`
+  - accepts the same simultaneous-activity violation across nested blocks
 - `test40_include_scope_correct_outer.mm`
   - accepts `$[ ... $]` inside an inner block, while the harness rejects it
 - `test49_token_splice_axiom.mm`
   - accepts token splicing across includes, while the harness rejects it
 - `test50_token_splice_proof.mm`
   - same token-splicing issue as `test49`
+- `test28_self_include.mm` and `test44_include_cycle_main.mm`
+  - rejects a self-include / include cycle that section 4.1.2 says to ignore
+    as a later reference
+- `test87`, `test89`, `test90`, `test91` (include child completeness)
+  - accepts an included file that ends mid-statement, mid-`$a`, mid-`$p`, or
+    with an open block, while the harness rejects it
 
 In short: `metamath-exe` is more permissive than the harness on selected
-include-scope, token-boundary, and `$f`-globality cases.
+include-scope, child-boundary, token-boundary, and active-`$f` cases, and
+stricter than the harness on self-includes and cycles.
 
 ## metamath-knife
 
-`metamath-knife` currently diverges on three tests:
+`metamath-knife` currently diverges on six semantic tests and encounters two
+harness failures:
 
 - `test20_unknown_step_qmark_(should_accept_with_warning).mm`
   - rejects `?` in an ordinary proof where the harness accepts it
@@ -63,9 +75,19 @@ include-scope, token-boundary, and `$f`-globality cases.
   - rejects `?` in a compressed proof where the harness accepts it
 - `test67_toplevel_essential.mm`
   - rejects a top-level `$e` where the harness accepts it
+- `test19_illegal_characters_in_compressed_proof.mm`
+  - accepts compressed-proof bytes outside `A`-`Z` and `?` that the harness
+    rejects under the strict Appendix B reading
+- `test28_self_include.mm` and `test44_include_cycle_main.mm`
+  - rejects a self-include / include cycle that section 4.1.2 says to ignore
+    as a later reference
 
-In short: `metamath-knife` is stricter than the harness on incomplete proofs
-and top-level `$e`.
+In short: `metamath-knife` is stricter than the harness on incomplete proofs,
+top-level `$e`, self-includes, and cycles, and more permissive on
+compressed-proof bytes.
+
+On `test01` and `test48`, `metamath-knife` aborts while rendering diagnostics.
+The harness records these as process failures rather than semantic verdicts.
 
 ## Shared Agreement Points
 

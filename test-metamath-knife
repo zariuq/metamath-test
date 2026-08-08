@@ -1,9 +1,28 @@
 #!/bin/sh
 # Run metamath-knife from the directory containing the .mm file
 # so that relative include paths resolve correctly
+# Contract: exit 0 on acceptance, 1 on semantic rejection, and 2 on harness
+# failure.
+
+set -u
+
+METAMATH_KNIFE="${METAMATH_KNIFE:-metamath-knife}"
+if [ ! -x "$METAMATH_KNIFE" ] && ! command -v "$METAMATH_KNIFE" >/dev/null 2>&1; then
+  echo "METAMATH_KNIFE is not an executable file: $METAMATH_KNIFE" >&2
+  exit 2
+fi
 
 MMFILE="$1"
 MMDIR="$(cd "$(dirname "$MMFILE")" && pwd)"
 MMBASE="$(basename "$MMFILE")"
 
-cd "$MMDIR" && ~/.cargo/bin/metamath-knife --verify --split --jobs 4 --time "$MMBASE"
+cd "$MMDIR" || exit 2
+"$METAMATH_KNIFE" --verify --split --jobs 4 --time "$MMBASE"
+status=$?
+case "$status" in
+  0|1) exit "$status" ;;
+  *)
+    echo "metamath-knife terminated abnormally (status $status)" >&2
+    exit 2
+    ;;
+esac
