@@ -39,11 +39,11 @@ METAMATH_KNIFE=/path/to/metamath-knife ./run-testsuite-all ./test-metamath-knife
 Current active assertion count in `run-testsuite-all`:
 
 - `core`: 40
-- `unit`: 106
+- `unit`: 109
 - `mmverify`: 31
-- `total`: 177
+- `total`: 180
 
-A `--small-only` run reports `167/167` with `10` skips for a conforming verifier.
+A `--small-only` run reports `170/170` with `10` skips for a conforming verifier.
 
 ## Test Layout
 

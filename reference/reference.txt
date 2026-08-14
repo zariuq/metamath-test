@@ -132,6 +132,9 @@ ACCEPT unit/test94_include_child_empty.mm # Sec. 4.1.2: an empty included file i
 ACCEPT unit/test95_include_child_comment_only.mm # Sec. 4.1.2: a child holding only a complete comment is a legal boundary
 ACCEPT unit/test96_include_nested_origins.mm # Sec. 4.1.2: nested includes; $a and $p may close exactly at file boundaries
 REJECT unit/test97_illegal_character_mid_compressed_number.mm # Sec. 4.4.5 / Appendix B: illegal byte inside an unfinished U-Y compressed number
+REJECT unit/test98_compressed_save_interrupts_index_bad.mm # Sec. 4.4.5 / Appendix B: Z cannot interrupt an unfinished U-Y compressed number
+REJECT unit/test99_compressed_repeated_save_alias_bad.mm # Sec. 4.4.5 / Appendix B: each Z must immediately follow a completed proof step
+REJECT unit/test100_compressed_header_explicit_mandatory_hyp_bad.mm # Sec. 4.4.5 / Appendix B: the explicit compressed header may not repeat an implicit mandatory hypothesis
 REJECT unit/test55_compressed_z_oob.mm # Sec. 4.4.5 / Appendix B: Z reference out of bounds
 REJECT unit/test56_duplicate_d_normalization_bad.mm # Sec. 4.2.4: duplicate $d is normalized, not treated as a separate restriction
 ACCEPT unit/test57_case_sensitivity_labels.mm # Sec. 4.1.1, 4.2.1: labels are case-sensitive
